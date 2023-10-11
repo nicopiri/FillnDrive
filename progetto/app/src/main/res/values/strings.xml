@@ -4,7 +4,14 @@
     <!-- Strings used for fragments for navigation -->
     <string name="first_fragment_label">First Fragment</string>
     <string name="second_fragment_label">Second Fragment</string>
-    <string name="next">Next</string>
+    <string name="cerca">Cerca</string>
+    <string name="benzina">Benzina</string>
+    <string name="diesel">Diesel</string>
+    <string name="gpl">GPL</string>
+    <string name="metano">Metano</string>
+    <string name="elettrico">Elettrico</string>
+    <string name="labelDistanza">Distanza massima (in km): </string>
+    <string name="labelConsumo">Consumo medio del veicolo (km/l): </string>
     <string name="previous">Previous</string>
 
     <string name="lorem_ipsum">
