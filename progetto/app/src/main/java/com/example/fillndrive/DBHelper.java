@@ -46,8 +46,6 @@ public class DBHelper extends SQLiteOpenHelper {
         executor.submit(() -> updateTable(db, carburantiUrl, "carburanti", 5));
 
         executor.shutdown();
-
-        db.close();
     }
 
     // Metodo per l'aggiornamento di una tabella nel database da un file CSV
