@@ -36,17 +36,23 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         db = new DBHelper(this);
 
+        // Ottiene la data attuale
         Calendar calendar = Calendar.getInstance();
         int currentDay = calendar.get(Calendar.DAY_OF_MONTH);
+
+        // Accede alle preferenze condivise
         SharedPreferences settings = getSharedPreferences("PREFS", 0);
         int lastDay = settings.getInt("day", 0);
 
+        // Verifica se la data attuale è diversa dall'ultima data registrata aggiorna i dati del db
         if(lastDay != currentDay){
+            // Aggiorna la data nelle preferenze condivise
             SharedPreferences.Editor editor = settings.edit();
             editor.putInt("day", currentDay);
             editor.commit();
 
             try {
+                // Esegue l'operazione di aggiornamento dei dati
                 db.updateData();
             } catch (IOException | InterruptedException e) {
                 throw new RuntimeException(e);
