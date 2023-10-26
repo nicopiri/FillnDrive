@@ -15,32 +15,42 @@ import java.util.concurrent.TimeUnit;
 
 public class DBHelper extends SQLiteOpenHelper {
 
+    // Definizione di costanti per il nome del database e gli URL dei dati
     private static final String DB_NAME = "Distributori";
     private static final String stazioniUrl = "https://www.mimit.gov.it/images/exportCSV/anagrafica_impianti_attivi.csv";
     private static final String carburantiUrl = "https://www.mimit.gov.it/images/exportCSV/prezzo_alle_8.csv";
 
+
+    // Costruttore della classe DBHelper
     public DBHelper(Context context) {
         super(context, DB_NAME, null, 1);
     }
 
+
+
     @Override
     public void onCreate(SQLiteDatabase db) {
-        System.out.println("onCreate avviata");
+        // Creazione delle tabelle nel database se non esistono già
         db.execSQL("CREATE TABLE IF NOT EXISTS stazioni(idImpianto INTEGER PRIMARY KEY, Bandiera TEXT, Tipo_Impianto TEXT, Latitudine REAL, Longitudine REAL)");
         db.execSQL("CREATE TABLE IF NOT EXISTS carburanti(idImpianto INTEGER, descCarburante TEXT, Prezzo REAL, isSelf INTEGER)");
     }
 
+
+    // Metodo per aggiornare i dati dai file CSV
     public void updateData() throws IOException, InterruptedException {
         SQLiteDatabase db = this.getWritableDatabase();
 
+        // Crea un pool di thread con 2 thread
         ExecutorService executor = Executors.newFixedThreadPool(2);
         executor.submit(() -> updateTable(db, stazioniUrl, "stazioni", 10));
         executor.submit(() -> updateTable(db, carburantiUrl, "carburanti", 5));
 
         executor.shutdown();
+
         db.close();
     }
 
+    // Metodo per l'aggiornamento di una tabella nel database da un file CSV
     private void updateTable(SQLiteDatabase db, String csvUrl, String tableName, int expectedCol) {
         try {
             final URL cu = new URL(csvUrl);
@@ -51,13 +61,13 @@ public class DBHelper extends SQLiteOpenHelper {
                 db.beginTransaction();
 
                 String deleteQuery = "DELETE FROM " + tableName;
-                db.execSQL(deleteQuery);
+                db.execSQL(deleteQuery); // Cancella tutti i dati dalla tabella prima di aggiornarla
 
                 while ((line = in.readLine()) != null) {
                     if (i >= 2) {
                         String[] data = line.split(";");
                         if(data.length == expectedCol)
-                            insert(db, tableName, data);
+                            insert(db, tableName, data); // Inserisce i dati nella tabella
                     }
                     i++;
                 }
@@ -71,6 +81,7 @@ public class DBHelper extends SQLiteOpenHelper {
         }
     }
 
+    // Metodo per l'inserimento dei dati in base al nome della tabella
     private void insert(SQLiteDatabase db, String tableName, String[] data) {
         if(tableName.equals("stazioni")){
             ContentValues cv = new ContentValues();
