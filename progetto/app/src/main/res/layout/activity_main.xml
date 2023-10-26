@@ -44,4 +44,12 @@
         app:layout_anchor="@+id/include"
         app:layout_anchorGravity="center" />
 
+    <Button
+        android:id="@+id/cercaButton"
+        android:layout_width="100dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="16dp"
+        android:text="@string/cerca" />
+
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

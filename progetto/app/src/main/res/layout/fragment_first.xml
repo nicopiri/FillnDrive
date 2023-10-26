@@ -103,13 +103,4 @@
             android:layout_marginStart="8dp" />
     </LinearLayout>
 
-    <!-- "Cerca" button at the right side -->
-    <Button
-        android:id="@+id/cercaButton"
-        android:layout_width="100dp"
-        android:layout_height="wrap_content"
-        android:layout_gravity="end"
-        android:layout_margin="16dp"
-        android:text="@string/cerca" />
-
 </LinearLayout>

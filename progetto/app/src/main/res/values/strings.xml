@@ -5,6 +5,7 @@
     <string name="first_fragment_label">First Fragment</string>
     <string name="second_fragment_label">Second Fragment</string>
     <string name="maps_activity_label">Maps Activity</string>
+    <string name="main_activity_label">Main Activity</string>
     <string name="cerca">Cerca</string>
     <string name="benzina">Benzina</string>
     <string name="diesel">Diesel</string>
