@@ -1,5 +1,6 @@
 package com.example.fillndrive;
 
+import android.content.SharedPreferences;
 import android.os.Bundle;
 
 import com.google.android.material.snackbar.Snackbar;
@@ -8,6 +9,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.view.View;
 
+import androidx.appcompat.view.SupportActionModeWrapper;
 import androidx.core.view.WindowCompat;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
@@ -19,6 +21,9 @@ import com.example.fillndrive.databinding.ActivityMainBinding;
 import android.view.Menu;
 import android.view.MenuItem;
 
+import java.io.IOException;
+import java.util.Calendar;
+
 public class MainActivity extends AppCompatActivity {
 
     DBHelper db;
@@ -27,8 +32,26 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
         super.onCreate(savedInstanceState);
         db = new DBHelper(this);
+
+        Calendar calendar = Calendar.getInstance();
+        int currentDay = calendar.get(Calendar.DAY_OF_MONTH);
+        SharedPreferences settings = getSharedPreferences("PREFS", 0);
+        int lastDay = settings.getInt("day", 0);
+
+        if(lastDay != currentDay){
+            SharedPreferences.Editor editor = settings.edit();
+            editor.putInt("day", currentDay);
+            editor.commit();
+
+            try {
+                db.updateData();
+            } catch (IOException | InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
 
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
