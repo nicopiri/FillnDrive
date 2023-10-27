@@ -46,17 +46,18 @@ public class MainActivity extends AppCompatActivity {
 
         // Verifica se la data attuale è diversa dall'ultima data registrata aggiorna i dati del db
         if(lastDay != currentDay){
-            // Aggiorna la data nelle preferenze condivise
-            SharedPreferences.Editor editor = settings.edit();
-            editor.putInt("day", currentDay);
-            editor.commit();
-
+            
             try {
                 // Esegue l'operazione di aggiornamento dei dati
                 db.updateData();
             } catch (IOException | InterruptedException e) {
                 throw new RuntimeException(e);
             }
+
+            // Aggiorna la data nelle preferenze condivise
+            SharedPreferences.Editor editor = settings.edit();
+            editor.putInt("day", currentDay);
+            editor.commit();
         }
 
         binding = ActivityMainBinding.inflate(getLayoutInflater());
