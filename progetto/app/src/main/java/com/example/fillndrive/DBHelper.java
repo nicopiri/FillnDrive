@@ -1,9 +1,9 @@
 package com.example.fillndrive;
 
-import android.content.ContentValues;
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.database.sqlite.SQLiteStatement;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -11,7 +11,6 @@ import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
 public class DBHelper extends SQLiteOpenHelper {
 
@@ -31,8 +30,8 @@ public class DBHelper extends SQLiteOpenHelper {
     @Override
     public void onCreate(SQLiteDatabase db) {
         // Creazione delle tabelle nel database se non esistono già
-        db.execSQL("CREATE TABLE IF NOT EXISTS stazioni(idImpianto INTEGER PRIMARY KEY, Bandiera TEXT, Tipo_Impianto TEXT, Latitudine REAL, Longitudine REAL)");
-        db.execSQL("CREATE TABLE IF NOT EXISTS carburanti(idImpianto INTEGER, descCarburante TEXT, Prezzo REAL, isSelf INTEGER)");
+        db.execSQL("CREATE TABLE IF NOT EXISTS stazioni(idImpianto INTEGER PRIMARY KEY, Bandiera TEXT, Tipo_Impianto TEXT, Latitudine TEXT, Longitudine TEXT)");
+        db.execSQL("CREATE TABLE IF NOT EXISTS carburanti(idImpianto INTEGER, descCarburante TEXT, Prezzo REAL, isSelf BOOLEAN)");
     }
 
 
@@ -40,18 +39,22 @@ public class DBHelper extends SQLiteOpenHelper {
     public void updateData() throws IOException, InterruptedException {
         SQLiteDatabase db = this.getWritableDatabase();
 
+        String sqlS = "insert into stazioni(idImpianto, Bandiera, Tipo_Impianto, Latitudine, Longitudine) values (?,?,?,?,?);";
+        String sqlC = "insert into carburanti(idImpianto, descCarburante, Prezzo, isSelf) values (?,?,?,?);";
+
         // Crea un pool di thread con 2 thread
         ExecutorService executor = Executors.newFixedThreadPool(2);
-        executor.submit(() -> updateTable(db, stazioniUrl, "stazioni", 10));
-        executor.submit(() -> updateTable(db, carburantiUrl, "carburanti", 5));
+        executor.submit(() -> updateTable(db, sqlS, stazioniUrl, "stazioni", 10));
+        executor.submit(() -> updateTable(db, sqlC, carburantiUrl, "carburanti", 5));
 
         executor.shutdown();
     }
 
     // Metodo per l'aggiornamento di una tabella nel database da un file CSV
-    private void updateTable(SQLiteDatabase db, String csvUrl, String tableName, int expectedCol) {
+    private void updateTable(SQLiteDatabase db, String query, String csvUrl, String tableName, int expectedCol) {
         try {
             final URL cu = new URL(csvUrl);
+            SQLiteStatement stm = db.compileStatement(query);
             try (BufferedReader in = new BufferedReader(new InputStreamReader(cu.openStream()))) {
                 String line;
                 int i = 0;
@@ -64,8 +67,10 @@ public class DBHelper extends SQLiteOpenHelper {
                 while ((line = in.readLine()) != null) {
                     if (i >= 2) {
                         String[] data = line.split(";");
-                        if(data.length == expectedCol)
-                            insert(db, tableName, data); // Inserisce i dati nella tabella
+                        if(data.length == expectedCol) {
+                            insert(tableName, stm, data);
+                            stm.clearBindings();
+                        }
                     }
                     i++;
                 }
@@ -80,22 +85,20 @@ public class DBHelper extends SQLiteOpenHelper {
     }
 
     // Metodo per l'inserimento dei dati in base al nome della tabella
-    private void insert(SQLiteDatabase db, String tableName, String[] data) {
+    private void insert(String tableName, SQLiteStatement stm, String[] data) {
         if(tableName.equals("stazioni")){
-            ContentValues cv = new ContentValues();
-            cv.put("idImpianto", data[0]);
-            cv.put("Bandiera", data[2]);
-            cv.put("Tipo_Impianto", data[3]);
-            cv.put("Latitudine", data[8]);
-            cv.put("Longitudine", data[9]);
-            db.insert("stazioni", null, cv);
+            stm.bindString(1, data[0]);
+            stm.bindString(2, data[2]);
+            stm.bindString(3, data[3]);
+            stm.bindString(4, data[8]);
+            stm.bindString(5, data[9]);
+            stm.executeInsert();
         }else if(tableName.equals("carburanti")){
-            ContentValues cv = new ContentValues();
-            cv.put("idImpianto", data[0]);
-            cv.put("descCarburante", data[1]);
-            cv.put("Prezzo", data[2]);
-            cv.put("isSelf", data[3]);
-            db.insert("carburanti", null, cv);
+            stm.bindString(1, data[0]);
+            stm.bindString(2, data[1]);
+            stm.bindString(3, data[2]);
+            stm.bindString(4, data[3]);
+            stm.executeInsert();
         }
     }
 
