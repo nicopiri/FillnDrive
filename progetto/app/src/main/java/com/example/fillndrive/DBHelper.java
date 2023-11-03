@@ -30,7 +30,7 @@ public class DBHelper extends SQLiteOpenHelper {
     @Override
     public void onCreate(SQLiteDatabase db) {
         // Creazione delle tabelle nel database se non esistono già
-        db.execSQL("CREATE TABLE IF NOT EXISTS stazioni(idImpianto INTEGER PRIMARY KEY, Bandiera TEXT, Tipo_Impianto TEXT, Latitudine TEXT, Longitudine TEXT)");
+        db.execSQL("CREATE TABLE IF NOT EXISTS stazioni(idImpianto INTEGER PRIMARY KEY, Bandiera TEXT, Tipo_Impianto TEXT, Comune TEXT, Provincia TEXT, Latitudine TEXT, Longitudine TEXT)");
         db.execSQL("CREATE TABLE IF NOT EXISTS carburanti(idImpianto INTEGER, descCarburante TEXT, Prezzo REAL, isSelf BOOLEAN)");
     }
 
@@ -39,7 +39,7 @@ public class DBHelper extends SQLiteOpenHelper {
     public void updateData() throws IOException, InterruptedException {
         SQLiteDatabase db = this.getWritableDatabase();
 
-        String sqlS = "insert into stazioni(idImpianto, Bandiera, Tipo_Impianto, Latitudine, Longitudine) values (?,?,?,?,?);";
+        String sqlS = "insert into stazioni(idImpianto, Bandiera, Tipo_Impianto, Comune, Provincia, Latitudine, Longitudine) values (?,?,?,?,?,?,?);";
         String sqlC = "insert into carburanti(idImpianto, descCarburante, Prezzo, isSelf) values (?,?,?,?);";
 
         // Crea un pool di thread con 2 thread
@@ -90,8 +90,10 @@ public class DBHelper extends SQLiteOpenHelper {
             stm.bindString(1, data[0]);
             stm.bindString(2, data[2]);
             stm.bindString(3, data[3]);
-            stm.bindString(4, data[8]);
-            stm.bindString(5, data[9]);
+            stm.bindString(4, data[6])
+            stm.bindString(5, data[7])
+            stm.bindString(6, data[8]);
+            stm.bindString(7, data[9]);
             stm.executeInsert();
         }else if(tableName.equals("carburanti")){
             stm.bindString(1, data[0]);
