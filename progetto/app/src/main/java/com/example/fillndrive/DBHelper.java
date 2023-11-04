@@ -90,8 +90,8 @@ public class DBHelper extends SQLiteOpenHelper {
             stm.bindString(1, data[0]);
             stm.bindString(2, data[2]);
             stm.bindString(3, data[3]);
-            stm.bindString(4, data[6])
-            stm.bindString(5, data[7])
+            stm.bindString(4, data[6]);
+            stm.bindString(5, data[7]);
             stm.bindString(6, data[8]);
             stm.bindString(7, data[9]);
             stm.executeInsert();
