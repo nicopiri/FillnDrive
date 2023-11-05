@@ -1,15 +1,13 @@
 package com.example.fillndrive;
 
-import android.content.SharedPreferences;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.view.SupportActionModeWrapper;
-import androidx.core.view.WindowCompat;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 import androidx.navigation.ui.AppBarConfiguration;
@@ -17,15 +15,12 @@ import androidx.navigation.ui.NavigationUI;
 
 import com.example.fillndrive.databinding.ActivityMainBinding;
 
-import android.view.Menu;
-import android.view.MenuItem;
-
 import java.io.IOException;
 import java.util.Calendar;
 
 public class MainActivity extends AppCompatActivity {
 
-    DBHelper db;
+    private DBHelper db;
     private AppBarConfiguration appBarConfiguration;
     private ActivityMainBinding binding;
 
@@ -34,15 +29,10 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
 
         super.onCreate(savedInstanceState);
-        db = new DBHelper(this);
+        db = DBHelper.getInstance(this);
 
-        // Ottiene la data attuale
-        Calendar calendar = Calendar.getInstance();
-        int currentDay = calendar.get(Calendar.DAY_OF_MONTH);
-
-        // Accede alle preferenze condivise
-        SharedPreferences settings = getSharedPreferences("PREFS", 0);
-        int lastDay = settings.getInt("day", 0);
+        int currentDay = DateUtility.getCurrentDay(this);
+        int lastDay = DateUtility.getLastDay(this);
 
         // Verifica se la data attuale è diversa dall'ultima data registrata aggiorna i dati del db
         if(lastDay != currentDay){
@@ -53,11 +43,6 @@ public class MainActivity extends AppCompatActivity {
             } catch (IOException | InterruptedException e) {
                 throw new RuntimeException(e);
             }
-
-            // Aggiorna la data nelle preferenze condivise
-            SharedPreferences.Editor editor = settings.edit();
-            editor.putInt("day", currentDay);
-            editor.commit();
         }
 
         binding = ActivityMainBinding.inflate(getLayoutInflater());

@@ -9,6 +9,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -19,13 +20,16 @@ public class DBHelper extends SQLiteOpenHelper {
     private static final String stazioniUrl = "https://www.mimit.gov.it/images/exportCSV/anagrafica_impianti_attivi.csv";
     private static final String carburantiUrl = "https://www.mimit.gov.it/images/exportCSV/prezzo_alle_8.csv";
 
+    private static DBHelper instance;
+
+    private CountDownLatch updateLatch;
+
 
     // Costruttore della classe DBHelper
     public DBHelper(Context context) {
         super(context, DB_NAME, null, 1);
+        updateLatch = new CountDownLatch(2);
     }
-
-
 
     @Override
     public void onCreate(SQLiteDatabase db) {
@@ -81,6 +85,9 @@ public class DBHelper extends SQLiteOpenHelper {
             }
         } catch (IOException e) {
             throw new RuntimeException(e);
+        } finally {
+            // Signal that the update is complete
+            updateLatch.countDown();
         }
     }
 
@@ -105,6 +112,17 @@ public class DBHelper extends SQLiteOpenHelper {
     @Override
     public void onUpgrade(SQLiteDatabase sqLiteDatabase, int i, int i1) {
 
+    }
+
+    public static synchronized DBHelper getInstance(Context context) {
+        if (instance == null) {
+            instance = new DBHelper(context.getApplicationContext());
+        }
+        return instance;
+    }
+
+    public void waitForUpdate() throws InterruptedException {
+        updateLatch.await();
     }
 
 }
