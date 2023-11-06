@@ -83,7 +83,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     LatLng userLocation = new LatLng(location.getLatitude(), location.getLongitude());
                     Address address = getAddressFromLatLong(location.getLatitude(), location.getLongitude());
                     String comune = address.getLocality();
-                    List<StazioneDiRifornimento> listaStazioni = getListaStazioni(comune);
+                    List<StazioneDiRifornimento> listaStazioni = getListaStazioni(comune.toUpperCase());
 
                     //Crea i marker sulla mappa corrispondenti alle stazioni di rifornimento trovate
 //                    createMarkers(listaStazioni);
@@ -151,28 +151,28 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         // Now, it's safe to query the database
         dbConnection = db.getReadableDatabase();
 
-//        String query = "SELECT bandiera, comune, provincia, prezzo, longitudine, latitudine FROM stazioni NATURAL JOIN carburanti WHERE comune = ?";
-//        Cursor cursor = dbConnection.rawQuery(query, new String[]{comune});
-
-        String query = "SELECT s.bandiera, s.latitudine, s.longitudine, c.prezzo FROM stazioni s NATURAL JOIN carburanti c";
-        Cursor cursor = dbConnection.rawQuery(query, null);
+        String query = "SELECT s.IdImpianto, s.bandiera, s.comune, s.latitudine, s.longitudine, MIN(c.prezzo) AS minPrezzo " +
+                        "FROM stazioni s NATURAL JOIN carburanti c " +
+                        "WHERE s.comune = ? AND descCarburante LIKE 'Benzina%' " +
+                        "GROUP BY s.IdImpianto, s.bandiera, s.comune, s.latitudine, s.longitudine";
+        Cursor cursor = dbConnection.rawQuery(query, new String[]{comune});
 
         if (cursor != null) {
             if (cursor.moveToFirst()) {
                 do {
-                    String bandiera = cursor.getString(0);
-                    String latitudine = cursor.getString(1);
-                    String longitudine = cursor.getString(2);
-                    double prezzo = cursor.getDouble(3);
-//                    double latitudine = cursor.getDouble(1);
-//                    double longitudine = cursor.getDouble(2);
+                    String id = cursor.getString(0);
+                    String bandiera = cursor.getString(1);
+                    String comuneFromDb = cursor.getString(2);
+                    String latitudine = cursor.getString(3);
+                    String longitudine = cursor.getString(4);
+                    double prezzo = cursor.getDouble(5);
 
-                    listaStazioni.add(new StazioneDiRifornimento(bandiera, null, prezzo, latitudine, longitudine));
+                    listaStazioni.add(new StazioneDiRifornimento(Integer.parseInt(id), bandiera, comuneFromDb, prezzo, latitudine, longitudine));
                 } while (cursor.moveToNext());
             }
             cursor.close();
         }
-        //dbConnection.close();
+        dbConnection.close();
         return listaStazioni;
     }
 

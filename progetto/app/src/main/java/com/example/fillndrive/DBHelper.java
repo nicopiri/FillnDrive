@@ -16,13 +16,14 @@ import java.util.concurrent.Executors;
 public class DBHelper extends SQLiteOpenHelper {
 
     // Definizione di costanti per il nome del database e gli URL dei dati
-    private static final String DB_NAME = "Distributori";
+    private static final String DB_NAME = "FuelStationDatabase";
     private static final String stazioniUrl = "https://www.mimit.gov.it/images/exportCSV/anagrafica_impianti_attivi.csv";
     private static final String carburantiUrl = "https://www.mimit.gov.it/images/exportCSV/prezzo_alle_8.csv";
 
     private static DBHelper instance;
 
     private CountDownLatch updateLatch;
+    private final Object lockObject = new Object();
 
 
     // Costruttore della classe DBHelper
@@ -80,14 +81,20 @@ public class DBHelper extends SQLiteOpenHelper {
                 }
                 in.close();
                 db.setTransactionSuccessful();
+            } catch (IOException e) {
+                e.printStackTrace();
+                throw new RuntimeException(e);
             } finally {
                 db.endTransaction();
             }
         } catch (IOException e) {
+            e.printStackTrace();
             throw new RuntimeException(e);
         } finally {
-            // Signal that the update is complete
-            updateLatch.countDown();
+            synchronized (lockObject) {
+                // Signal that the update is complete
+                updateLatch.countDown();
+            }
         }
     }
 
