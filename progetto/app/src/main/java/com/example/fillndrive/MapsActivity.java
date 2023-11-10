@@ -38,6 +38,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private ActivityMapsBinding binding;
     private static final int REQUEST_LOCATION_PERMISSION = 1;
     private Marker randomMarker;
+    private Marker randomMarker2;
     private EditText searchEditText;
 
     @Override
@@ -88,7 +89,14 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             }
         }
     }
-
+    private void addCustomMarker(String title, String snippet, LatLng coordinates) {
+        Marker marker = mMap.addMarker(new MarkerOptions()
+                .position(coordinates)
+                .title(title)
+                .snippet(snippet)
+                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE)));
+        marker.showInfoWindow();
+    }
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
@@ -100,32 +108,61 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         } else {
             mMap.setMyLocationEnabled(true);
 
-            FusedLocationProviderClient locationClient = LocationServices.getFusedLocationProviderClient(this);
+            CustomMarker customMarker1 = new CustomMarker("1.899 €", "snippet", "info", new LatLng(45.50570629421494, 12.132273545222072));
+            CustomMarker customMarker2 = new CustomMarker("1.899 €", "snippet", "info", new LatLng(37.407215, -122.090009));
+
+            addCustomMarker(customMarker1.getTitle(), customMarker1.getSnippet(), customMarker1.getCoordinates());
+            addCustomMarker(customMarker2.getTitle(), customMarker2.getSnippet(), customMarker2.getCoordinates());
+
+
+        FusedLocationProviderClient locationClient = LocationServices.getFusedLocationProviderClient(this);
             locationClient.getLastLocation().addOnSuccessListener(this, location -> {
                 if (location != null) {
                     LatLng userLocation = new LatLng(location.getLatitude(), location.getLongitude());
 
-                    // Add a random marker
+               /*
+
+
+
+                   // Add a random marker
                     randomMarker = mMap.addMarker(new MarkerOptions()
                             .position(new LatLng(45.50570629421494, 12.132273545222072))
                             .title("1.899 €")
                             .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE)));
                     randomMarker.showInfoWindow();
 
+                    randomMarker2 = mMap.addMarker(new MarkerOptions()
+                            .position(new LatLng(37.407215, -122.090009))
+                            .title("1.899 €")
+                            .snippet("bella napoli")
+                            .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE)));
+                 randomMarker2.showInfoWindow();
+                */
                     mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(userLocation, 14));
                 }
-            });
+           });
 
             mMap.setOnMarkerClickListener(marker -> {
-                if (marker.equals(randomMarker)) {
-                    // Handle marker click event here
-                    // You can navigate to the marker's location or perform any other action.
-                    navigateToMarkerLocation(marker.getPosition());
-                }
-                return false;
+
+                    showMarkerInformation(marker);
+                    return true;
             });
+
         }
     }
+
+    private void showMarkerInformation(Marker marker) {
+        LatLng coordinates = marker.getPosition();
+        String title = marker.getTitle();
+        String snippet = marker.getSnippet();
+        String info = "Custom info";
+
+        CustomMarkerInfoFragment infoFragment = CustomMarkerInfoFragment.newInstance(title, snippet, info, coordinates);
+        infoFragment.show(getSupportFragmentManager(), "marker_info");
+    }
+
+
+
 
     private void navigateToMarkerLocation(LatLng destination) {
         Uri gmmIntentUri = Uri.parse("google.navigation:q=" + destination.latitude + "," + destination.longitude);
