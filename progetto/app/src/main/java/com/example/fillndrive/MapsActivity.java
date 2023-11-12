@@ -2,14 +2,11 @@ package com.example.fillndrive;
 
 import static androidx.constraintlayout.helper.widget.MotionEffect.TAG;
 
-import android.Manifest;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
-import android.location.Address;
-import android.location.Geocoder;
 import android.location.Address;
 import android.location.Geocoder;
 import android.net.Uri;
@@ -49,8 +46,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private GoogleMap googleMap;
     private ActivityMapsBinding binding;
     private static final int REQUEST_LOCATION_PERMISSION = 1;
-    private Marker randomMarker;
-    private Marker randomMarker2;
     private EditText searchEditText;
 
     @Override
@@ -157,7 +152,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
            });
 
             googleMap.setOnMarkerClickListener(marker -> {
-
                     showMarkerInformation(marker);
                     return true;
             });
@@ -289,7 +283,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         dbConnection.close();
         return listaStazioni;
     }
-
 
     /**
      * Metodo che avvia la navigazione verso una destinazione utilizzando le API di Google.
