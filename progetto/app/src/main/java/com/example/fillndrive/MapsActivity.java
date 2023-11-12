@@ -2,6 +2,7 @@ package com.example.fillndrive;
 
 import static androidx.constraintlayout.helper.widget.MotionEffect.TAG;
 
+import android.Manifest;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
@@ -9,9 +10,14 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.location.Address;
 import android.location.Geocoder;
+import android.location.Address;
+import android.location.Geocoder;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -43,7 +49,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private GoogleMap googleMap;
     private ActivityMapsBinding binding;
     private static final int REQUEST_LOCATION_PERMISSION = 1;
-
+    private Marker randomMarker;
+    private Marker randomMarker2;
+    private EditText searchEditText;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -52,10 +60,55 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         binding = ActivityMapsBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
+        searchEditText = findViewById(R.id.search_edit_text);
+        Button searchButton = findViewById(R.id.search_button);
+
+        searchButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                performSearch();
+            }
+        });
+
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
+    }
+
+    private void performSearch() {
+        String location = searchEditText.getText().toString();
+        if (location != null && !location.equals("")) {
+            List<Address> addressList = null;
+
+            // Utilizza un Geocoder per cercare l'indirizzo
+            Geocoder geocoder = new Geocoder(MapsActivity.this);
+            try {
+                addressList = geocoder.getFromLocationName(location, 1);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            if (addressList != null && addressList.size() > 0) {
+                Address address = addressList.get(0);
+
+                // Sposta la camera alla posizione dell'indirizzo trovato
+                LatLng latLng = new LatLng(address.getLatitude(), address.getLongitude());
+                googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 15));
+            } else {
+                // Mostra un messaggio di errore se l'indirizzo non viene trovato
+                Toast.makeText(MapsActivity.this, "Indirizzo non trovato", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
+    private void addCustomMarker(String title, String snippet, LatLng coordinates) {
+        Marker marker = googleMap.addMarker(new MarkerOptions()
+                .position(coordinates)
+                .title(title)
+                .snippet(snippet)
+                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE)));
+        marker.showInfoWindow();
     }
 
     /**
@@ -73,6 +126,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             ActivityCompat.requestPermissions(MapsActivity.this, new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_LOCATION_PERMISSION);
         } else {
             this.googleMap.setMyLocationEnabled(true);
+
+            CustomMarker customMarker1 = new CustomMarker("1.899 €", "snippet", "info", new LatLng(45.50570629421494, 12.132273545222072));
+            CustomMarker customMarker2 = new CustomMarker("1.899 €", "snippet", "info", new LatLng(37.407215, -122.090009));
+
+            addCustomMarker(customMarker1.getTitle(), customMarker1.getSnippet(), customMarker1.getCoordinates());
+            addCustomMarker(customMarker2.getTitle(), customMarker2.getSnippet(), customMarker2.getCoordinates());
+
 
             FusedLocationProviderClient locationClient = LocationServices.getFusedLocationProviderClient(this);
             locationClient.getLastLocation().addOnSuccessListener(this, location -> {
@@ -92,26 +152,29 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     //Crea i marker sulla mappa corrispondenti alle stazioni di rifornimento trovate
                     createMarkers(listaStazioniIn7Km);
 
-                    this.googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(userLocation, 14));
+                    googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(userLocation, 14));
                 }
-            });
+           });
 
-            googleMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
-                @Override
-                public boolean onMarkerClick(Marker marker) {
-                    // TODO: Handle marker click event here
-                    marker.showInfoWindow();
+            googleMap.setOnMarkerClickListener(marker -> {
 
-                    // You can navigate to the marker's location or perform any other action.
-//                    navigateToMarkerLocation(marker.getPosition());
-
-                    // Return 'true' to consume the event, 'false' to allow default behavior
+                    showMarkerInformation(marker);
                     return true;
-                }
             });
-        }
 
+        }
     }
+
+    private void showMarkerInformation(Marker marker) {
+        LatLng coordinates = marker.getPosition();
+        String title = marker.getTitle();
+        String snippet = marker.getSnippet();
+        String info = "Custom info";
+
+        CustomMarkerInfoFragment infoFragment = CustomMarkerInfoFragment.newInstance(title, snippet, info, coordinates);
+        infoFragment.show(getSupportFragmentManager(), "marker_info");
+    }
+
 
     private Address getAddressFromLatLong(double latitude, double longitude) {
         Geocoder geocoder = new Geocoder(this, Locale.getDefault());
@@ -203,9 +266,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         dbConnection = db.getReadableDatabase();
 
         String query = "SELECT s.IdImpianto, s.bandiera, s.comune, s.latitudine, s.longitudine, MIN(c.prezzo) AS minPrezzo " +
-                        "FROM stazioni s NATURAL JOIN carburanti c " +
-                        "WHERE s.comune = ? AND descCarburante LIKE 'Benzina%' " +
-                        "GROUP BY s.IdImpianto, s.bandiera, s.comune, s.latitudine, s.longitudine";
+                "FROM stazioni s NATURAL JOIN carburanti c " +
+                "WHERE s.comune = ? AND descCarburante LIKE 'Benzina%' " +
+                "GROUP BY s.IdImpianto, s.bandiera, s.comune, s.latitudine, s.longitudine";
         Cursor cursor = dbConnection.rawQuery(query, new String[]{comune});
 
         if (cursor != null) {
@@ -269,5 +332,4 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             }
         }
     }
-
 }

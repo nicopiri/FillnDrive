@@ -20,4 +20,6 @@
         Hi there
     </string>
     <string name="title_activity_maps">MapsActivity</string>
+    <string name="search">Search</string>
+    <string name="search_location">Search location</string>
 </resources>
