@@ -40,10 +40,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     private DBHelper db;
     private SQLiteDatabase dbConnection;
-    private GoogleMap mMap;
+    private GoogleMap googleMap;
     private ActivityMapsBinding binding;
     private static final int REQUEST_LOCATION_PERMISSION = 1;
-    private Marker randomMarker;
 
 
     @Override
@@ -65,7 +64,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
      */
     @Override
     public void onMapReady(GoogleMap googleMap) {
-        mMap = googleMap;
+        this.googleMap = googleMap;
 
         // Controlla se ci sono i permessi per la geolocalizzazione
         if (ContextCompat.checkSelfPermission(MapsActivity.this, android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_DENIED) {
@@ -73,7 +72,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             // Richiede i permessi
             ActivityCompat.requestPermissions(MapsActivity.this, new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_LOCATION_PERMISSION);
         } else {
-            mMap.setMyLocationEnabled(true);
+            this.googleMap.setMyLocationEnabled(true);
 
             FusedLocationProviderClient locationClient = LocationServices.getFusedLocationProviderClient(this);
             locationClient.getLastLocation().addOnSuccessListener(this, location -> {
@@ -83,22 +82,32 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     LatLng userLocation = new LatLng(location.getLatitude(), location.getLongitude());
                     Address address = getAddressFromLatLong(location.getLatitude(), location.getLongitude());
                     String comune = address.getLocality();
-                    List<StazioneDiRifornimento> listaStazioni = getListaStazioni(comune.toUpperCase());
+                    List<StazioneDiRifornimento> listaStazioniByComune = getListaStazioni(comune.toUpperCase());
+
+                    //TODO: da capire di quanto deve essere il raggio. Momentaneamente posto a 7 km.
+                    List<StazioneDiRifornimento> listaStazioniIn7Km = getListaStazioniIn7Km(listaStazioniByComune, location.getLatitude(), location.getLongitude());
+
+                    // TODO: calcolare l'indice di convenienza e ordinare la listaStazioni in modo da colorare propriamente i marker nel metodo sotto
 
                     //Crea i marker sulla mappa corrispondenti alle stazioni di rifornimento trovate
-//                    createMarkers(listaStazioni);
+                    createMarkers(listaStazioniIn7Km);
 
-                    mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(userLocation, 14));
+                    this.googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(userLocation, 14));
                 }
             });
 
-            mMap.setOnMarkerClickListener(marker -> {
-                if (marker.equals(randomMarker)) {
-                    // Handle marker click event here
+            googleMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
+                @Override
+                public boolean onMarkerClick(Marker marker) {
+                    // TODO: Handle marker click event here
+                    marker.showInfoWindow();
+
                     // You can navigate to the marker's location or perform any other action.
-                    navigateToMarkerLocation(marker.getPosition());
+//                    navigateToMarkerLocation(marker.getPosition());
+
+                    // Return 'true' to consume the event, 'false' to allow default behavior
+                    return true;
                 }
-                return false;
             });
         }
 
@@ -118,13 +127,55 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         return null;
     }
 
+    private List<StazioneDiRifornimento> getListaStazioniIn7Km(List<StazioneDiRifornimento> allStazioni, double userLat, double userLng) {
+        List<StazioneDiRifornimento> stazioniInRadius = new ArrayList<>();
+
+        for (StazioneDiRifornimento stazione : allStazioni) {
+            double stazioneLat = Double.parseDouble(stazione.getLatitudine());
+            double stazioneLng = Double.parseDouble(stazione.getLongitudine());
+
+            // Calcola la distanza tra l'utente e la stazione
+            double distance = calculateDistance(userLat, userLng, stazioneLat, stazioneLng);
+
+            // Aggiunge la stazione solo se è entro i 7 km
+            if (distance <= 7.0) {
+                stazioniInRadius.add(stazione);
+            }
+        }
+        return stazioniInRadius;
+    }
+
+    /**
+     * Haversine formula to calculate distance between two points on a sphere.
+     * @param userLat
+     * @param userLng
+     * @param stationLat
+     * @param stationLng
+     * @return
+     */
+    private double calculateDistance(double userLat, double userLng, double stationLat, double stationLng) {
+        double earthRadius = 6371; // Radius of the Earth in kilometers
+
+        double latDiff = Math.toRadians(stationLat - userLat);
+        double lngDiff = Math.toRadians(stationLng - userLng);
+
+        double a = Math.sin(latDiff / 2) * Math.sin(latDiff / 2)
+                + Math.cos(Math.toRadians(userLat)) * Math.cos(Math.toRadians(stationLat))
+                * Math.sin(lngDiff / 2) * Math.sin(lngDiff / 2);
+
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+        return earthRadius * c; // Distance in kilometers
+    }
+
     private void createMarkers(List<StazioneDiRifornimento> listaStazioni) {
-        // Add a random marker
-        randomMarker = mMap.addMarker(new MarkerOptions()
-                .position(new LatLng(45.50570629421494, 12.132273545222072))
-                .title("1.899 €")
-                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE)));
-        randomMarker.showInfoWindow();
+        for (StazioneDiRifornimento stazione : listaStazioni) {
+            googleMap.addMarker(new MarkerOptions()
+                    .position(new LatLng(Double.parseDouble(stazione.getLatitudine()), Double.parseDouble(stazione.getLongitudine())))
+                    .title(String.valueOf(stazione.getPrezzo()))
+                    .snippet(stazione.getBandiera())
+                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE))); //TODO: cambiare colore icona marker
+        }
     }
 
     public List<StazioneDiRifornimento> getListaStazioni(String comune) {
