@@ -2,13 +2,16 @@ package com.example.fillndrive;
 
 import static androidx.constraintlayout.helper.widget.MotionEffect.TAG;
 
+import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.graphics.Color;
 import android.location.Address;
 import android.location.Geocoder;
+import android.location.Location;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
@@ -22,6 +25,9 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.FragmentActivity;
 
+import androidx.fragment.app.FragmentActivity;
+import com.google.android.gms.maps.SupportMapFragment;
+
 import com.example.fillndrive.databinding.ActivityMapsBinding;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
@@ -33,6 +39,13 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.Polyline;
+import com.google.android.gms.maps.model.PolylineOptions;
+import com.google.maps.DirectionsApiRequest;
+import com.google.maps.GeoApiContext;
+import com.google.maps.model.DirectionsResult;
+import com.google.maps.model.DirectionsRoute;
+import com.google.maps.model.TravelMode;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -47,6 +60,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private ActivityMapsBinding binding;
     private static final int REQUEST_LOCATION_PERMISSION = 1;
     private EditText searchEditText;
+
+    private LatLng currentLocation;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -122,12 +138,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         } else {
             this.googleMap.setMyLocationEnabled(true);
 
-            CustomMarker customMarker1 = new CustomMarker("1.899 €", "snippet", "info", new LatLng(45.50570629421494, 12.132273545222072));
-            CustomMarker customMarker2 = new CustomMarker("1.899 €", "snippet", "info", new LatLng(37.407215, -122.090009));
-
-            addCustomMarker(customMarker1.getTitle(), customMarker1.getSnippet(), customMarker1.getCoordinates());
-            addCustomMarker(customMarker2.getTitle(), customMarker2.getSnippet(), customMarker2.getCoordinates());
-
 
             FusedLocationProviderClient locationClient = LocationServices.getFusedLocationProviderClient(this);
             locationClient.getLastLocation().addOnSuccessListener(this, location -> {
@@ -159,6 +169,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         }
     }
 
+
+
+
     private void showMarkerInformation(Marker marker) {
         LatLng coordinates = marker.getPosition();
         String title = marker.getTitle();
@@ -166,8 +179,21 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         String info = "Custom info";
 
         CustomMarkerInfoFragment infoFragment = CustomMarkerInfoFragment.newInstance(title, snippet, info, coordinates);
-        infoFragment.show(getSupportFragmentManager(), "marker_info");
+
+        // Passa l'istanza di GoogleMap al fragment
+        infoFragment.setGoogleMap(googleMap);
+
+        // Mostra il fragment
+        getSupportFragmentManager().beginTransaction()
+                .replace(android.R.id.content, infoFragment)
+                .addToBackStack(null)
+                .commit();
     }
+
+
+
+
+
 
 
     private Address getAddressFromLatLong(double latitude, double longitude) {

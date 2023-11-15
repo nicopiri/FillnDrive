@@ -3,7 +3,9 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:padding="16dp">
+    android:padding="16dp"
+    android:background="@android:color/black">
+
 
     <TextView
         android:id="@+id/titleTextView"
@@ -24,11 +26,6 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"/>
 
-    <Button
-        android:id="@+id/showRouteButton"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Mostra Percorso"/>
 
     <Button
         android:id="@+id/startRouteButton"

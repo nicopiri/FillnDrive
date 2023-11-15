@@ -13,17 +13,17 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.DialogFragment;
 
+import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.Marker;
+import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 
-public class CustomMarkerInfoFragment extends DialogFragment {
+public class CustomMarkerInfoFragment extends BottomSheetDialogFragment {
 
     private TextView titleTextView;
     private TextView snippetTextView;
     private TextView infoTextView;
-    private Button showRouteButton;
     private Button startRouteButton;
-
+    private GoogleMap googleMap;
     private LatLng destinationCoordinates;
 
     public static CustomMarkerInfoFragment newInstance(String title, String snippet, String info, LatLng coordinates) {
@@ -37,6 +37,9 @@ public class CustomMarkerInfoFragment extends DialogFragment {
         return fragment;
     }
 
+    public void setGoogleMap(GoogleMap googleMap) {
+        this.googleMap = googleMap;
+    }
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         return inflater.inflate(R.layout.custom_marker_info, container, false);
@@ -49,7 +52,6 @@ public class CustomMarkerInfoFragment extends DialogFragment {
         titleTextView = view.findViewById(R.id.titleTextView);
         snippetTextView = view.findViewById(R.id.snippetTextView);
         infoTextView = view.findViewById(R.id.infoTextView);
-        showRouteButton = view.findViewById(R.id.showRouteButton);
         startRouteButton = view.findViewById(R.id.startRouteButton);
 
         Bundle args = getArguments();
@@ -60,16 +62,11 @@ public class CustomMarkerInfoFragment extends DialogFragment {
             infoTextView.setText(args.getString("info"));
         }
 
-        showRouteButton.setOnClickListener(v -> showRouteOnMap());
         startRouteButton.setOnClickListener(v -> startRoute());
     }
 
-    private void showRouteOnMap() {
-        // Implementa la logica per mostrare il percorso sulla mappa dell'applicazione
-        // Puoi utilizzare la posizione del marker e la posizione attuale dell'utente per disegnare il percorso sulla mappa
-    }
-
     private void startRoute() {
+        dismiss(); // Chiude il fragment
         if (destinationCoordinates != null) {
             Uri gmmIntentUri = Uri.parse("google.navigation:q=" + destinationCoordinates.latitude + "," + destinationCoordinates.longitude);
             Intent mapIntent = new Intent(Intent.ACTION_VIEW, gmmIntentUri);
@@ -82,4 +79,5 @@ public class CustomMarkerInfoFragment extends DialogFragment {
             }
         }
     }
+
 }
