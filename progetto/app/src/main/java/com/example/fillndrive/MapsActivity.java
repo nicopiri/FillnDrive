@@ -2,17 +2,13 @@ package com.example.fillndrive;
 
 import static androidx.constraintlayout.helper.widget.MotionEffect.TAG;
 
-import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
-import android.graphics.Color;
 import android.location.Address;
 import android.location.Geocoder;
-import android.location.Location;
-import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -25,9 +21,6 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.FragmentActivity;
 
-import androidx.fragment.app.FragmentActivity;
-import com.google.android.gms.maps.SupportMapFragment;
-
 import com.example.fillndrive.databinding.ActivityMapsBinding;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
@@ -39,13 +32,6 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
-import com.google.android.gms.maps.model.Polyline;
-import com.google.android.gms.maps.model.PolylineOptions;
-import com.google.maps.DirectionsApiRequest;
-import com.google.maps.GeoApiContext;
-import com.google.maps.model.DirectionsResult;
-import com.google.maps.model.DirectionsRoute;
-import com.google.maps.model.TravelMode;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -138,23 +124,24 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         } else {
             this.googleMap.setMyLocationEnabled(true);
 
-
             FusedLocationProviderClient locationClient = LocationServices.getFusedLocationProviderClient(this);
             locationClient.getLastLocation().addOnSuccessListener(this, location -> {
                 if (location != null) {
 
-                    // Trova la lista delle stazioni di rifornimento presenti nel comune della posizione
                     LatLng userLocation = new LatLng(location.getLatitude(), location.getLongitude());
+
+                    // Trova la lista delle stazioni di rifornimento presenti nel comune della posizione
+                    // TODO: rimuovere la ricerca per comune e farla invece per lat long
                     Address address = getAddressFromLatLong(location.getLatitude(), location.getLongitude());
                     String comune = address.getLocality();
                     List<StazioneDiRifornimento> listaStazioniByComune = getListaStazioni(comune.toUpperCase());
 
                     //TODO: da capire di quanto deve essere il raggio. Momentaneamente posto a 7 km.
+                    // Questa parte va eliminata perché la query al db deve essere implementata in modo che
+                    // si estragga già soltanto le stazioni di interesse entro una certa distanza.
                     List<StazioneDiRifornimento> listaStazioniIn7Km = getListaStazioniIn7Km(listaStazioniByComune, location.getLatitude(), location.getLongitude());
 
                     // TODO: calcolare l'indice di convenienza e ordinare la listaStazioni in modo da colorare propriamente i marker nel metodo sotto
-
-                    //Crea i marker sulla mappa corrispondenti alle stazioni di rifornimento trovate
                     createMarkers(listaStazioniIn7Km);
 
                     googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(userLocation, 14));
@@ -168,9 +155,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         }
     }
-
-
-
 
     private void showMarkerInformation(Marker marker) {
         LatLng coordinates = marker.getPosition();
@@ -190,12 +174,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 .commit();
     }
 
-
-
-
-
-
-
+    /**
+     * Recupera l'indirizzo della posizione attuale dell'utente.
+     * @param latitude
+     * @param longitude
+     * @return
+     */
     private Address getAddressFromLatLong(double latitude, double longitude) {
         Geocoder geocoder = new Geocoder(this, Locale.getDefault());
         try {
@@ -210,12 +194,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         return null;
     }
 
+
     private List<StazioneDiRifornimento> getListaStazioniIn7Km(List<StazioneDiRifornimento> allStazioni, double userLat, double userLng) {
         List<StazioneDiRifornimento> stazioniInRadius = new ArrayList<>();
 
         for (StazioneDiRifornimento stazione : allStazioni) {
-            double stazioneLat = Double.parseDouble(stazione.getLatitudine());
-            double stazioneLng = Double.parseDouble(stazione.getLongitudine());
+            double stazioneLat = stazione.getLatitudine();
+            double stazioneLng = stazione.getLongitudine();
 
             // Calcola la distanza tra l'utente e la stazione
             double distance = calculateDistance(userLat, userLng, stazioneLat, stazioneLng);
@@ -251,16 +236,26 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         return earthRadius * c; // Distance in kilometers
     }
 
+    /**
+     * Crea i marker sulla mappa corrispondenti alle stazioni di rifornimento trovate.
+     * @param listaStazioni
+     */
     private void createMarkers(List<StazioneDiRifornimento> listaStazioni) {
         for (StazioneDiRifornimento stazione : listaStazioni) {
             googleMap.addMarker(new MarkerOptions()
-                    .position(new LatLng(Double.parseDouble(stazione.getLatitudine()), Double.parseDouble(stazione.getLongitudine())))
+                    .position(new LatLng(stazione.getLatitudine(), stazione.getLongitudine()))
                     .title(String.valueOf(stazione.getPrezzo()))
                     .snippet(stazione.getBandiera())
                     .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE))); //TODO: cambiare colore icona marker
         }
     }
 
+    /**
+     * Legge dal db le stazioni vicine alla posizione di riferimento, che può essere
+     * la posizione attuale dell'utente oppure il luogo specifico cercato.
+     * @param comune
+     * @return
+     */
     public List<StazioneDiRifornimento> getListaStazioni(String comune) {
         List<StazioneDiRifornimento> listaStazioni = new ArrayList<>();
         db = DBHelper.getInstance(this);
@@ -297,8 +292,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     String id = cursor.getString(0);
                     String bandiera = cursor.getString(1);
                     String comuneFromDb = cursor.getString(2);
-                    String latitudine = cursor.getString(3);
-                    String longitudine = cursor.getString(4);
+                    double latitudine = cursor.getDouble(3);
+                    double longitudine = cursor.getDouble(4);
                     double prezzo = cursor.getDouble(5);
 
                     listaStazioni.add(new StazioneDiRifornimento(Integer.parseInt(id), bandiera, comuneFromDb, prezzo, latitudine, longitudine));
@@ -310,23 +305,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         return listaStazioni;
     }
 
-    /**
-     * Metodo che avvia la navigazione verso una destinazione utilizzando le API di Google.
-     *
-     * @param destination
-     */
-    private void navigateToMarkerLocation(LatLng destination) {
-        Uri gmmIntentUri = Uri.parse("google.navigation:q=" + destination.latitude + "," + destination.longitude);
-        Intent mapIntent = new Intent(Intent.ACTION_VIEW, gmmIntentUri);
-        mapIntent.setPackage("com.google.android.apps.maps"); // Specify the Google Maps app package
-
-        // Check if the Google Maps app is installed
-        if (mapIntent.resolveActivity(getPackageManager()) != null) {
-            startActivity(mapIntent);
-        } else {
-            Toast.makeText(this, "Google Maps non installato", Toast.LENGTH_SHORT).show();
-        }
-    }
 
     /**
      * Metodo che chiede all'utente il permesso alla localizzazione del dispositivo.

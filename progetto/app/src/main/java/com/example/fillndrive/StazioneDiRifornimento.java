@@ -6,10 +6,10 @@ public class StazioneDiRifornimento {
     private String bandiera;
     private String comune;
     private double prezzo;
-    private String latitudine;
-    private String longitudine;
+    private double latitudine;
+    private double longitudine;
 
-    public StazioneDiRifornimento(int idImpianto, String bandiera, String comune, double prezzo, String latitudine, String longitudine) {
+    public StazioneDiRifornimento(int idImpianto, String bandiera, String comune, double prezzo, double latitudine, double longitudine) {
         this.idImpianto = idImpianto;
         this.bandiera = bandiera;
         this.comune = comune;
@@ -34,11 +34,11 @@ public class StazioneDiRifornimento {
         return prezzo;
     }
 
-    public String getLatitudine() {
+    public double getLatitudine() {
         return latitudine;
     }
 
-    public String getLongitudine() {
+    public double getLongitudine() {
         return longitudine;
     }
 
@@ -58,11 +58,11 @@ public class StazioneDiRifornimento {
         this.prezzo = prezzo;
     }
 
-    public void setLatitudine(String latitudine) {
+    public void setLatitudine(double latitudine) {
         this.latitudine = latitudine;
     }
 
-    public void setLongitudine(String longitudine) {
+    public void setLongitudine(double longitudine) {
         this.longitudine = longitudine;
     }
 

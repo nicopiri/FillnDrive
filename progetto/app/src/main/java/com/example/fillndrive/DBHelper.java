@@ -35,7 +35,7 @@ public class DBHelper extends SQLiteOpenHelper {
     @Override
     public void onCreate(SQLiteDatabase db) {
         // Creazione delle tabelle nel database se non esistono già
-        db.execSQL("CREATE TABLE IF NOT EXISTS stazioni(idImpianto INTEGER PRIMARY KEY, Bandiera TEXT, Tipo_Impianto TEXT, Comune TEXT, Provincia TEXT, Latitudine TEXT, Longitudine TEXT)");
+        db.execSQL("CREATE TABLE IF NOT EXISTS stazioni(idImpianto INTEGER PRIMARY KEY, Bandiera TEXT, Tipo_Impianto TEXT, Comune TEXT, Provincia TEXT, Latitudine DOUBLE, Longitudine DOUBLE)");
         db.execSQL("CREATE TABLE IF NOT EXISTS carburanti(idImpianto INTEGER, descCarburante TEXT, Prezzo REAL, isSelf BOOLEAN)");
     }
 
