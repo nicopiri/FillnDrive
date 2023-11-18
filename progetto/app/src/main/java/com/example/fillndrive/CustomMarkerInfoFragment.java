@@ -43,6 +43,7 @@ public class CustomMarkerInfoFragment extends BottomSheetDialogFragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         return inflater.inflate(R.layout.custom_marker_info, container, false);
+
     }
 
     @Override
@@ -62,8 +63,12 @@ public class CustomMarkerInfoFragment extends BottomSheetDialogFragment {
             infoTextView.setText(args.getString("info"));
         }
 
+        Button closeButton = view.findViewById(R.id.closeButton);
+        closeButton.setOnClickListener(v -> dismiss()); // Chiude il fragment quando il pulsante è premuto
+
         startRouteButton.setOnClickListener(v -> startRoute());
     }
+
 
     private void startRoute() {
         dismiss(); // Chiude il fragment

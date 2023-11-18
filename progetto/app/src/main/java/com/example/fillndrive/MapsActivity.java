@@ -41,8 +41,10 @@ import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
+import com.google.maps.DirectionsApi;
 import com.google.maps.DirectionsApiRequest;
 import com.google.maps.GeoApiContext;
+import com.google.maps.android.PolyUtil;
 import com.google.maps.model.DirectionsResult;
 import com.google.maps.model.DirectionsRoute;
 import com.google.maps.model.TravelMode;
@@ -60,7 +62,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private ActivityMapsBinding binding;
     private static final int REQUEST_LOCATION_PERMISSION = 1;
     private EditText searchEditText;
-
+    private Polyline currentPolyline;
     private LatLng currentLocation;
 
 
@@ -111,16 +113,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 Toast.makeText(MapsActivity.this, "Indirizzo non trovato", Toast.LENGTH_SHORT).show();
             }
         }
+
+
+
+
     }
 
-    private void addCustomMarker(String title, String snippet, LatLng coordinates) {
-        Marker marker = googleMap.addMarker(new MarkerOptions()
-                .position(coordinates)
-                .title(title)
-                .snippet(snippet)
-                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE)));
-        marker.showInfoWindow();
-    }
 
     /**
      * Manipulates the map once available.
@@ -160,6 +158,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(userLocation, 14));
                 }
            });
+        }
 
             googleMap.setOnMarkerClickListener(marker -> {
                     showMarkerInformation(marker);
@@ -167,17 +166,38 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             });
 
         }
+
+    private double calculateDistanceToMarker(LatLng markerCoordinates) {
+        // Check if the app has the necessary location permissions
+        if (ContextCompat.checkSelfPermission(MapsActivity.this, android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_DENIED) {
+            // Permission not granted, request it
+            ActivityCompat.requestPermissions(MapsActivity.this, new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_LOCATION_PERMISSION);
+            return -1; // Return -1 to indicate that the permission is not granted
+        }
+
+        // Get the current location
+        FusedLocationProviderClient locationClient = LocationServices.getFusedLocationProviderClient(this);
+        locationClient.getLastLocation().addOnSuccessListener(this, location -> {
+            if (location != null) {
+
+                LatLng origin = new LatLng(location.getLatitude(), location.getLongitude());
+
+                double distance = calculateDistance(origin.latitude, origin.longitude, markerCoordinates.latitude, markerCoordinates.longitude);
+
+                // Now 'distance' contains the distance in kilometers
+                Toast.makeText(MapsActivity.this, "Distanza al marker: " + distance + " km", Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        return 0; // Placeholder value, you can replace it with a meaningful value or handle it differently
     }
-
-
-
 
     private void showMarkerInformation(Marker marker) {
         LatLng coordinates = marker.getPosition();
         String title = marker.getTitle();
         String snippet = marker.getSnippet();
-        String info = "Custom info";
-
+        String info = "custom info";
+        calculateDistanceToMarker(coordinates);// solo per testare la funzione
         CustomMarkerInfoFragment infoFragment = CustomMarkerInfoFragment.newInstance(title, snippet, info, coordinates);
 
         // Passa l'istanza di GoogleMap al fragment
@@ -189,9 +209,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 .addToBackStack(null)
                 .commit();
     }
-
-
-
 
 
 
