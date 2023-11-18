@@ -99,14 +99,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         }
     }
 
-    private void addCustomMarker(String title, String snippet, LatLng coordinates) {
-        Marker marker = googleMap.addMarker(new MarkerOptions()
-                .position(coordinates)
-                .title(title)
-                .snippet(snippet)
-                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE)));
-        marker.showInfoWindow();
-    }
 
     /**
      * Manipulates the map once available.
@@ -146,16 +138,39 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
                     googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(userLocation, 14));
                 }
-           });
+            });
 
             googleMap.setOnMarkerClickListener(marker -> {
-                    showMarkerInformation(marker);
-                    return true;
+                showMarkerInformation(marker);
+                return true;
             });
 
         }
     }
+    private double calculateDistanceToMarker(LatLng markerCoordinates) {
+        // Check if the app has the necessary location permissions
+        if (ContextCompat.checkSelfPermission(MapsActivity.this, android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_DENIED) {
+            // Permission not granted, request it
+            ActivityCompat.requestPermissions(MapsActivity.this, new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_LOCATION_PERMISSION);
+            return -1; // Return -1 to indicate that the permission is not granted
+        }
 
+        // Get the current location
+        FusedLocationProviderClient locationClient = LocationServices.getFusedLocationProviderClient(this);
+        locationClient.getLastLocation().addOnSuccessListener(this, location -> {
+            if (location != null) {
+
+                LatLng origin = new LatLng(location.getLatitude(), location.getLongitude());
+
+                double distance = calculateDistance(origin.latitude, origin.longitude, markerCoordinates.latitude, markerCoordinates.longitude);
+
+                // Now 'distance' contains the distance in kilometers
+                Toast.makeText(MapsActivity.this, "Distanza al marker: " + distance + " km", Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        return 0; // Placeholder value, you can replace it with a meaningful value or handle it differently
+    }
     private void showMarkerInformation(Marker marker) {
         LatLng coordinates = marker.getPosition();
         String title = marker.getTitle();
@@ -163,7 +178,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         String info = "Custom info";
 
         CustomMarkerInfoFragment infoFragment = CustomMarkerInfoFragment.newInstance(title, snippet, info, coordinates);
-
+        calculateDistanceToMarker(coordinates);
         // Passa l'istanza di GoogleMap al fragment
         infoFragment.setGoogleMap(googleMap);
 
