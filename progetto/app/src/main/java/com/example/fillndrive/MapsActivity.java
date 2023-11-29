@@ -122,19 +122,14 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
                     LatLng userLocation = new LatLng(location.getLatitude(), location.getLongitude());
 
-                    // Trova la lista delle stazioni di rifornimento presenti nel comune della posizione
-                    // TODO: rimuovere la ricerca per comune e farla invece per lat long
-                    Address address = getAddressFromLatLong(location.getLatitude(), location.getLongitude());
-                    String comune = address.getLocality();
-                    List<StazioneDiRifornimento> listaStazioniByComune = getListaStazioni(comune.toUpperCase());
+                     //Address address = getAddressFromLatLong(location.getLatitude(), location.getLongitude());
+                     //String comune = address.getLocality();
 
-                    //TODO: da capire di quanto deve essere il raggio. Momentaneamente posto a 7 km.
-                    // Questa parte va eliminata perché la query al db deve essere implementata in modo che
-                    // si estragga già soltanto le stazioni di interesse entro una certa distanza.
-                    List<StazioneDiRifornimento> listaStazioniIn7Km = getListaStazioniIn7Km(listaStazioniByComune, location.getLatitude(), location.getLongitude());
+                    // Trova la lista di stazioni in un raggio di 5km
+                    List<StazioneDiRifornimento> listaStazioni = getListaStazioni(userLocation);
 
                     // TODO: calcolare l'indice di convenienza e ordinare la listaStazioni in modo da colorare propriamente i marker nel metodo sotto
-                    createMarkers(listaStazioniIn7Km);
+                    createMarkers(listaStazioni);
 
                     googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(userLocation, 14));
                 }
@@ -267,12 +262,15 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     /**
      * Legge dal db le stazioni vicine alla posizione di riferimento, che può essere
-     * la posizione attuale dell'utente oppure il luogo specifico cercato.
-     * @param comune
-     * @return
+     * la posizione attuale dell'utente oppure il luogo specifico cercato. Il raggio di default
+     * è 5km. Se la lista è vuota aumenta il raggio e ripete la query.
+     * @param userLocation La posizione dell'utente o quella da lui cercata
+     * @return List di StazioniDiRifornimento entro 5km dalla posizione.
      */
-    public List<StazioneDiRifornimento> getListaStazioni(String comune) {
+    public List<StazioneDiRifornimento> getListaStazioni(LatLng userLocation) {
+
         List<StazioneDiRifornimento> listaStazioni = new ArrayList<>();
+
         db = DBHelper.getInstance(this);
 
         int currentDay = DateUtility.getCurrentDay(this);
@@ -294,28 +292,49 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         // Now, it's safe to query the database
         dbConnection = db.getReadableDatabase();
+        // raggio di default
+        double km = 5;
 
-        String query = "SELECT s.IdImpianto, s.bandiera, s.comune, s.latitudine, s.longitudine, MIN(c.prezzo) AS minPrezzo " +
-                "FROM stazioni s NATURAL JOIN carburanti c " +
-                "WHERE s.comune = ? AND descCarburante LIKE 'Benzina%' " +
-                "GROUP BY s.IdImpianto, s.bandiera, s.comune, s.latitudine, s.longitudine";
-        Cursor cursor = dbConnection.rawQuery(query, new String[]{comune});
+        do {
+            // fattori in gradi per il calcolo della distanza di 2.5km dalla userLocation
+            // 1 deg latitude = 110.574km
+            double lat = km/110.574;
+            // 1 deg longitude = 111.320*cos(Latitude)km
+            double lon = km/(111.320 * Math.abs(Math.cos(Math.toRadians(userLocation.latitude))));
 
-        if (cursor != null) {
-            if (cursor.moveToFirst()) {
-                do {
-                    String id = cursor.getString(0);
-                    String bandiera = cursor.getString(1);
-                    String comuneFromDb = cursor.getString(2);
-                    double latitudine = cursor.getDouble(3);
-                    double longitudine = cursor.getDouble(4);
-                    double prezzo = cursor.getDouble(5);
+            // coordinate entro cui fare la select delle stazioni dal db
+            double maxLatitude = userLocation.latitude + lat;
+            double minLatitude = userLocation.latitude - lat;
+            double maxLongitude = userLocation.longitude + lon;
+            double minLongitude = userLocation.longitude - lon;
+            String query = "SELECT s.IdImpianto, s.bandiera, s.comune, s.latitudine, s.longitudine, MIN(c.prezzo) AS minPrezzo " +
+                    "FROM stazioni s NATURAL JOIN carburanti c " +
+                    "WHERE s.latitudine BETWEEN \'" + minLatitude + "\' AND \'" + maxLatitude +
+                    "\' AND s.longitudine BETWEEN \'" + minLongitude + "\' AND \'" + maxLongitude +
+                    "\' AND descCarburante LIKE 'Benzina%' " +
+                    "GROUP BY s.IdImpianto, s.bandiera, s.comune, s.latitudine, s.longitudine";
 
-                    listaStazioni.add(new StazioneDiRifornimento(Integer.parseInt(id), bandiera, comuneFromDb, prezzo, latitudine, longitudine));
-                } while (cursor.moveToNext());
+            Cursor cursor = dbConnection.rawQuery(query, new String[]{});
+
+            if (cursor != null) {
+                if (cursor.moveToFirst()) {
+                    do {
+                        String id = cursor.getString(0);
+                        String bandiera = cursor.getString(1);
+                        String comuneFromDb = cursor.getString(2);
+                        double latitudine = cursor.getDouble(3);
+                        double longitudine = cursor.getDouble(4);
+                        double prezzo = cursor.getDouble(5);
+
+                        listaStazioni.add(new StazioneDiRifornimento(Integer.parseInt(id), bandiera, comuneFromDb, prezzo, latitudine, longitudine));
+                    } while (cursor.moveToNext());
+                }
+                cursor.close();
             }
-            cursor.close();
-        }
+            km += 2;
+            // se la lista è vuota ripete la query fino ad un raggio massimo di 40km
+        }while (listaStazioni.isEmpty() && km < 40);
+
         dbConnection.close();
         return listaStazioni;
     }
