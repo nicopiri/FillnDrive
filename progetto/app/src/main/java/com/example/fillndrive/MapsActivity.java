@@ -256,7 +256,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
      * @param route percorso
      */
     private double getRouteDistanceKm(DirectionsRoute route){
-        if(route!=null){
+        if(route!=null)
             return (double)route.legs[0].distance.inMeters / 1000;
         return -1;    
     }
