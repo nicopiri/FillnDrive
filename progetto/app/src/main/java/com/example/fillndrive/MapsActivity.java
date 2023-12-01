@@ -46,8 +46,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private ActivityMapsBinding binding;
     private static final int REQUEST_LOCATION_PERMISSION = 1;
     private EditText searchEditText;
-
+    private GeoApiContext context;
     private LatLng currentLocation;
+    protected static Polyline currentPolyline;
+
 
 
     @Override
@@ -56,6 +58,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         binding = ActivityMapsBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
+
+        context = new GeoApiContext.Builder()
+                .apiKey("AIzaSyDaOcHgOYCNOLMlIgmugkb3QC-ZxcQpFbs")
+                .build();
 
         searchEditText = findViewById(R.id.search_edit_text);
         Button searchButton = findViewById(R.id.search_button);
@@ -120,23 +126,24 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             locationClient.getLastLocation().addOnSuccessListener(this, location -> {
                 if (location != null) {
 
-                    LatLng userLocation = new LatLng(location.getLatitude(), location.getLongitude());
+                    currentLocation = new LatLng(location.getLatitude(), location.getLongitude());
 
                      //Address address = getAddressFromLatLong(location.getLatitude(), location.getLongitude());
                      //String comune = address.getLocality();
 
                     // Trova la lista di stazioni in un raggio di 5km
-                    List<StazioneDiRifornimento> listaStazioni = getListaStazioni(userLocation);
+                    List<StazioneDiRifornimento> listaStazioni = getListaStazioni(currentLocation);
 
                     // TODO: calcolare l'indice di convenienza e ordinare la listaStazioni in modo da colorare propriamente i marker nel metodo sotto
                     createMarkers(listaStazioni);
 
-                    googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(userLocation, 14));
+                    googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(currentLocation, 14));
                 }
             });
 
             googleMap.setOnMarkerClickListener(marker -> {
                 showMarkerInformation(marker);
+                drawRoute(currentLocation, marker.getPosition());
                 return true;
             });
 
@@ -155,9 +162,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         locationClient.getLastLocation().addOnSuccessListener(this, location -> {
             if (location != null) {
 
-                LatLng origin = new LatLng(location.getLatitude(), location.getLongitude());
+                currentLocation = new LatLng(location.getLatitude(), location.getLongitude());
 
-                double distance = calculateDistance(origin.latitude, origin.longitude, markerCoordinates.latitude, markerCoordinates.longitude);
+                double distance = calculateDistance(currentLocation.latitude, currentLocation.longitude, markerCoordinates.latitude, markerCoordinates.longitude);
 
                 // Now 'distance' contains the distance in kilometers
                 Toast.makeText(MapsActivity.this, "Distanza al marker: " + distance + " km", Toast.LENGTH_SHORT).show();
@@ -257,6 +264,39 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     .title(String.valueOf(stazione.getPrezzo()))
                     .snippet(stazione.getBandiera())
                     .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE))); //TODO: cambiare colore icona marker
+        }
+    }
+
+    /** 
+     * Dati due punti disegna il percorso sulla mappa 
+     * @param origin
+     * @param destination
+     */
+    private void drawRoute(LatLng origin, LatLng destination) {
+        try {
+            DirectionsResult result = DirectionsApi.newRequest(context)
+                    .origin(new com.google.maps.model.LatLng(origin.latitude, origin.longitude))
+                    .destination(new com.google.maps.model.LatLng(destination.latitude, destination.longitude))
+                    .mode(TravelMode.DRIVING)
+                    .await();
+            if (currentPolyline != null) {
+                currentPolyline.remove();
+            }
+            DirectionsRoute route = result.routes[0];
+            PolylineOptions polylineOptions = new PolylineOptions()
+                    .color(Color.BLUE)
+                    .width(5);
+            for (com.google.maps.model.LatLng point : route.overviewPolyline.decodePath()) {
+                polylineOptions.add(new LatLng(point.lat, point.lng));
+            }
+            
+            currentPolyline = googleMap.addPolyline(polylineOptions);
+
+            // Da sistemare
+            double durationInMin = (double)route.legs[0].duration.inSeconds / 60;
+            Toast.makeText(MapsActivity.this, "Il percorso dura: " + durationInMin + "minuti.", Toast.LENGTH_SHORT).show();
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
