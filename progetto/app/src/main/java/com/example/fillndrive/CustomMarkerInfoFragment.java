@@ -63,8 +63,18 @@ public class CustomMarkerInfoFragment extends BottomSheetDialogFragment {
             infoTextView.setText(args.getString("info"));
         }
 
+        // Chiude il fragment e cancella il percorso quando si clicca sulla mappa
+        googleMap.setOnMapClickListener(latLng -> {
+            if(isVisible()){
+                MapsActivity.currentPolyline.remove();
+                dismiss();
+            }
+        });
         Button closeButton = view.findViewById(R.id.closeButton);
-        closeButton.setOnClickListener(v -> dismiss()); // Chiude il fragment quando il pulsante è premuto
+        closeButton.setOnClickListener(view1 -> {
+            MapsActivity.currentPolyline.remove();
+            dismiss();
+        }); // Chiude il fragment quando il pulsante è premuto
 
         startRouteButton.setOnClickListener(v -> startRoute());
     }
