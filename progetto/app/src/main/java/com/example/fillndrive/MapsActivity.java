@@ -246,7 +246,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
      * @param route percorso
      */
     private double getRouteDurationMinutes(DirectionsRoute route){
-        return (double)route.legs[0].duration.inSeconds / 60;
+        if(route!=null)
+            return (double)route.legs[0].duration.inSeconds / 60;
+        return -1;
     }
 
     /**
@@ -254,7 +256,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
      * @param route percorso
      */
     private double getRouteDistanceKm(DirectionsRoute route){
-        return (double)route.legs[0].distance.inMeters / 1000;
+        if(route!=null){
+            return (double)route.legs[0].distance.inMeters / 1000;
+        return -1;    
     }
     
     /**
