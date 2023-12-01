@@ -57,6 +57,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private GeoApiContext context;
     private LatLng currentLocation;
     protected static Polyline currentPolyline;
+    protected static DirectionsRoute route;
 
 
 
@@ -152,6 +153,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             googleMap.setOnMarkerClickListener(marker -> {
                 showMarkerInformation(marker);
                 drawRoute(currentLocation, marker.getPosition());
+                Toast.makeText(MapsActivity.this, "Il percorso dura: " + getRouteDurationMinutes(route) + "minuti.", Toast.LENGTH_SHORT).show();
+                Toast.makeText(MapsActivity.this, "Il percorso è lungo: " + getRouteDistanceKm(route) + "km.", Toast.LENGTH_SHORT).show();
                 return true;
             });
 
@@ -169,18 +172,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         FusedLocationProviderClient locationClient = LocationServices.getFusedLocationProviderClient(this);
         locationClient.getLastLocation().addOnSuccessListener(this, location -> {
             if (location != null) {
-
                 currentLocation = new LatLng(location.getLatitude(), location.getLongitude());
-
-                double distance = calculateDistance(currentLocation.latitude, currentLocation.longitude, markerCoordinates.latitude, markerCoordinates.longitude);
-
-                // Now 'distance' contains the distance in kilometers
-                Toast.makeText(MapsActivity.this, "Distanza al marker: " + distance + " km", Toast.LENGTH_SHORT).show();
             }
         });
 
         return 0; // Placeholder value, you can replace it with a meaningful value or handle it differently
     }
+    
     private void showMarkerInformation(Marker marker) {
         LatLng coordinates = marker.getPosition();
         String title = marker.getTitle();
@@ -197,68 +195,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 .replace(android.R.id.content, infoFragment)
                 .addToBackStack(null)
                 .commit();
-    }
-
-    /**
-     * Recupera l'indirizzo della posizione attuale dell'utente.
-     * @param latitude
-     * @param longitude
-     * @return
-     */
-    private Address getAddressFromLatLong(double latitude, double longitude) {
-        Geocoder geocoder = new Geocoder(this, Locale.getDefault());
-        try {
-            List<Address> addresses = geocoder.getFromLocation(latitude, longitude, 1);
-
-            if (addresses != null && !addresses.isEmpty()) {
-                return addresses.get(0);
-            }
-        } catch (IOException e) {
-            Toast.makeText(this, "Impossibile ottenere l'indirizzo", Toast.LENGTH_SHORT).show();
-        }
-        return null;
-    }
-
-
-    private List<StazioneDiRifornimento> getListaStazioniIn7Km(List<StazioneDiRifornimento> allStazioni, double userLat, double userLng) {
-        List<StazioneDiRifornimento> stazioniInRadius = new ArrayList<>();
-
-        for (StazioneDiRifornimento stazione : allStazioni) {
-            double stazioneLat = stazione.getLatitudine();
-            double stazioneLng = stazione.getLongitudine();
-
-            // Calcola la distanza tra l'utente e la stazione
-            double distance = calculateDistance(userLat, userLng, stazioneLat, stazioneLng);
-
-            // Aggiunge la stazione solo se è entro i 7 km
-            if (distance <= 7.0) {
-                stazioniInRadius.add(stazione);
-            }
-        }
-        return stazioniInRadius;
-    }
-
-    /**
-     * Haversine formula to calculate distance between two points on a sphere.
-     * @param userLat
-     * @param userLng
-     * @param stationLat
-     * @param stationLng
-     * @return
-     */
-    private double calculateDistance(double userLat, double userLng, double stationLat, double stationLng) {
-        double earthRadius = 6371; // Radius of the Earth in kilometers
-
-        double latDiff = Math.toRadians(stationLat - userLat);
-        double lngDiff = Math.toRadians(stationLng - userLng);
-
-        double a = Math.sin(latDiff / 2) * Math.sin(latDiff / 2)
-                + Math.cos(Math.toRadians(userLat)) * Math.cos(Math.toRadians(stationLat))
-                * Math.sin(lngDiff / 2) * Math.sin(lngDiff / 2);
-
-        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-
-        return earthRadius * c; // Distance in kilometers
     }
 
     /**
@@ -290,24 +226,37 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             if (currentPolyline != null) {
                 currentPolyline.remove();
             }
-            DirectionsRoute route = result.routes[0];
+            route = result.routes[0];
             PolylineOptions polylineOptions = new PolylineOptions()
                     .color(Color.BLUE)
                     .width(5);
-            for (com.google.maps.model.LatLng point : route.overviewPolyline.decodePath()) {
-                polylineOptions.add(new LatLng(point.lat, point.lng));
-            }
-            
+
+            route.overviewPolyline.decodePath().forEach(point ->
+                    polylineOptions.add(new LatLng(point.lat, point.lng)));
+
             currentPolyline = googleMap.addPolyline(polylineOptions);
 
-            // Da sistemare
-            double durationInMin = (double)route.legs[0].duration.inSeconds / 60;
-            Toast.makeText(MapsActivity.this, "Il percorso dura: " + durationInMin + "minuti.", Toast.LENGTH_SHORT).show();
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
+    /**
+     * Dato un percorso restituisce la durata in minuti
+     * @param route percorso
+     */
+    private double getRouteDurationMinutes(DirectionsRoute route){
+        return (double)route.legs[0].duration.inSeconds / 60;
+    }
+
+    /**
+     * Dato un percorso restituisce la sua lunghezza in km
+     * @param route percorso
+     */
+    private double getRouteDistanceKm(DirectionsRoute route){
+        return (double)route.legs[0].distance.inMeters / 1000;
+    }
+    
     /**
      * Legge dal db le stazioni vicine alla posizione di riferimento, che può essere
      * la posizione attuale dell'utente oppure il luogo specifico cercato. Il raggio di default
