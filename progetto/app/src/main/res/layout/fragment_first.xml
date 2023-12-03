@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:paddingLeft="16dp"
@@ -8,7 +9,7 @@
     android:orientation="vertical" >
 
     <RadioGroup
-        android:id="@+id/radioGroup"
+        android:id="@+id/fuelRadioGroup"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:padding="10dp"
@@ -42,13 +43,6 @@
             android:text="@string/metano"
             android:textAlignment="center"
             android:button="@drawable/custom_radio_button" />
-        <RadioButton
-            android:id="@+id/radioButton5"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/elettrico"
-            android:textAlignment="center"
-            android:button="@drawable/custom_radio_button" />
     </RadioGroup>
 
     <!-- Horizontal layout for text and number -->
@@ -60,47 +54,19 @@
         android:layout_gravity="end">
 
         <!-- Label with random text -->
-        <TextView
-            android:id="@+id/distanzaMaxLabel"
+
+        <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/servitoSwitch"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/labelDistanza"
-            android:textSize="16sp" />
+            android:layout_weight="1"
+            android:text="@string/labelServito"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            />
 
         <!-- 2-digit editable number -->
-        <EditText
-            android:id="@+id/distanzaMaxValue"
-            android:layout_width="50dp"
-            android:layout_height="wrap_content"
-            android:inputType="number"
-            android:maxLength="2"
-            android:hint="10"
-            android:layout_marginStart="8dp" />
-    </LinearLayout>
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:padding="10dp"
-        android:layout_gravity="end">
-
-        <!-- Label with random text -->
-        <TextView
-            android:id="@+id/consumoVeicoloLabel"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/labelConsumo"
-            android:textSize="16sp" />
-
-        <!-- 2-digit editable number -->
-        <EditText
-            android:id="@+id/consumoVeicoloValue"
-            android:layout_width="50dp"
-            android:layout_height="wrap_content"
-            android:inputType="number"
-            android:maxLength="2"
-            android:hint="16"
-            android:layout_marginStart="8dp" />
     </LinearLayout>
 
 </LinearLayout>
