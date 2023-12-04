@@ -1,21 +1,22 @@
 package com.example.fillndrive;
 
+import com.google.android.gms.maps.model.LatLng;
+
 public class StazioneDiRifornimento {
 
     private int idImpianto;
     private String bandiera;
-    private String comune;
     private double prezzo;
-    private double latitudine;
-    private double longitudine;
+    private LatLng coordinate;
+    private double distanzaInKm;
 
-    public StazioneDiRifornimento(int idImpianto, String bandiera, String comune, double prezzo, double latitudine, double longitudine) {
+    private double indiceConsumo;
+
+    public StazioneDiRifornimento(int idImpianto, String bandiera, double prezzo, LatLng coordinate) {
         this.idImpianto = idImpianto;
         this.bandiera = bandiera;
-        this.comune = comune;
         this.prezzo = prezzo;
-        this.latitudine = latitudine;
-        this.longitudine = longitudine;
+        this.coordinate = coordinate;
     }
 
     public int getIdImpianto() {
@@ -26,20 +27,28 @@ public class StazioneDiRifornimento {
         return bandiera;
     }
 
-    public String getComune() {
-        return comune;
-    }
-
     public double getPrezzo() {
         return prezzo;
     }
 
-    public double getLatitudine() {
-        return latitudine;
+    public LatLng getCoordinate() {
+        return coordinate;
     }
 
-    public double getLongitudine() {
-        return longitudine;
+    public double getDistanzaInKm() {
+        return distanzaInKm;
+    }
+
+    public double getIndiceConsumo() {
+        return indiceConsumo;
+    }
+
+    public void setIndiceConsumo(double indiceConsumo) {
+        this.indiceConsumo = indiceConsumo;
+    }
+
+    public void setDistanzaInKm(double distanzaInKm) {
+        this.distanzaInKm = distanzaInKm;
     }
 
     public void setIdImpianto(int idImpianto) {
@@ -50,20 +59,11 @@ public class StazioneDiRifornimento {
         this.bandiera = bandiera;
     }
 
-    public void setComune(String comune) {
-        this.comune = comune;
-    }
-
     public void setPrezzo(double prezzo) {
         this.prezzo = prezzo;
     }
 
-    public void setLatitudine(double latitudine) {
-        this.latitudine = latitudine;
+    public void setCoordinate(LatLng coordinate) {
+        this.coordinate = coordinate;
     }
-
-    public void setLongitudine(double longitudine) {
-        this.longitudine = longitudine;
-    }
-
 }
