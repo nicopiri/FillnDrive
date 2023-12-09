@@ -1,7 +1,6 @@
 package com.example.fillndrive;
 
 import static androidx.constraintlayout.helper.widget.MotionEffect.TAG;
-
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
@@ -16,7 +15,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
-
+import android.view.View;
 import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -37,16 +36,15 @@ import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.maps.DirectionsApi;
 import com.google.maps.GeoApiContext;
-import com.google.maps.errors.ApiException;
 import com.google.maps.model.DirectionsResult;
 import com.google.maps.model.DirectionsRoute;
 import com.google.maps.model.TravelMode;
 
+
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Locale;
 
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
@@ -60,7 +58,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private GeoApiContext context;
     private LatLng currentLocation;
     protected static Polyline currentPolyline;
-    protected DirectionsRoute route;
+    protected static DirectionsRoute route;
 
 
 
@@ -91,9 +89,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mapFragment.getMapAsync(this);
     }
 
-    /**
-     * Supporta la ricerca per luogo specifico tramite inserimento della città nella barra di ricerca.
-     */
     private void performSearch() {
         String location = searchEditText.getText().toString();
         if (location != null && !location.equals("")) {
@@ -104,7 +99,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             try {
                 addressList = geocoder.getFromLocationName(location, 1);
             } catch (IOException e) {
-                Log.e(TAG, "An error occurred: " + e.getMessage(), e);
+                e.printStackTrace();
             }
 
             if (addressList != null && addressList.size() > 0) {
@@ -143,26 +138,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
                     currentLocation = new LatLng(location.getLatitude(), location.getLongitude());
 
+                     //Address address = getAddressFromLatLong(location.getLatitude(), location.getLongitude());
+                     //String comune = address.getLocality();
+
                     // Trova la lista di stazioni in un raggio di 5km
                     List<StazioneDiRifornimento> listaStazioni = getListaStazioni(currentLocation);
 
-                    // Per ogni stazione, calcola la distanza dalla posizione corrente
-                    listaStazioni.forEach(stazione -> {
-                        try {
-                            double distanza = calcolaDistanza(stazione, currentLocation);
-                            stazione.setDistanzaInKm(distanza);
-
-                        } catch (IOException | InterruptedException | ApiException e) {
-                            Log.e(TAG, "An error occurred: " + e.getMessage(), e);
-                        }
-                    });
-
-                    listaStazioni.forEach(stazione -> stazione.setIndiceConsumo(calcolaIndice(stazione)));
-
-                    List<StazioneDiRifornimento> listaStazioniOrdinata = listaStazioni.stream()
-                            .sorted(Comparator.comparingDouble(StazioneDiRifornimento::getIndiceConsumo))
-                            .collect(Collectors.toList());
-
+                    // TODO: calcolare l'indice di convenienza e ordinare la listaStazioni in modo da colorare propriamente i marker nel metodo sotto
                     createMarkers(listaStazioni);
 
                     googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(currentLocation, 14));
@@ -172,35 +154,40 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             googleMap.setOnMarkerClickListener(marker -> {
                 showMarkerInformation(marker);
                 drawRoute(currentLocation, marker.getPosition());
-                Toast.makeText(MapsActivity.this, "Il percorso dura: " + getRouteDurationMinutes(route) + " minuti.", Toast.LENGTH_SHORT).show();
-                Toast.makeText(MapsActivity.this, "Il percorso è lungo: " + getRouteDistanceKm(route) + " km.", Toast.LENGTH_SHORT).show();
+                Toast.makeText(MapsActivity.this, "Il percorso dura: " + getRouteDurationMinutes(route) + "minuti.", Toast.LENGTH_SHORT).show();
+                Toast.makeText(MapsActivity.this, "Il percorso è lungo: " + getRouteDistanceKm(route) + "km.", Toast.LENGTH_SHORT).show();
                 return true;
             });
 
         }
     }
+    private double calculateDistanceToMarker(LatLng markerCoordinates) {
+        // Check if the app has the necessary location permissions
+        if (ContextCompat.checkSelfPermission(MapsActivity.this, android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_DENIED) {
+            // Permission not granted, request it
+            ActivityCompat.requestPermissions(MapsActivity.this, new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_LOCATION_PERMISSION);
+            return -1; // Return -1 to indicate that the permission is not granted
+        }
 
-    private double calcolaIndice(StazioneDiRifornimento stazione) {
-        double indice = stazione.getDistanzaInKm() * stazione.getPrezzo();
-        return Math.round(indice * 1000.0) / 1000.0;
+        // Get the current location
+        FusedLocationProviderClient locationClient = LocationServices.getFusedLocationProviderClient(this);
+        locationClient.getLastLocation().addOnSuccessListener(this, location -> {
+            if (location != null) {
+                currentLocation = new LatLng(location.getLatitude(), location.getLongitude());
+            }
+        });
+
+        return 0; // Placeholder value, you can replace it with a meaningful value or handle it differently
     }
-
-    private double calcolaDistanza(StazioneDiRifornimento stazione, LatLng origin) throws IOException, InterruptedException, ApiException {
-        route = calculateRoute(origin, stazione.getCoordinate());
-        return getRouteDistanceKm(route);
-    }
-
-    /**
-     * Mostra la finestra con le informazioni aggiuntiva sulla stazione di rifornimento selezionata.
-     * @param marker
-     */
+    
     private void showMarkerInformation(Marker marker) {
         LatLng coordinates = marker.getPosition();
-        String title = marker.getTitle() + " €";
+        String title = marker.getTitle();
         String snippet = marker.getSnippet();
         String info = "Custom info";
-        CustomMarkerInfoFragment infoFragment = CustomMarkerInfoFragment.newInstance(title, snippet, info, coordinates);
 
+        CustomMarkerInfoFragment infoFragment = CustomMarkerInfoFragment.newInstance(title, snippet, info, coordinates);
+        calculateDistanceToMarker(coordinates);
         // Passa l'istanza di GoogleMap al fragment
         infoFragment.setGoogleMap(googleMap);
 
@@ -232,14 +219,18 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
      */
     private void drawRoute(LatLng origin, LatLng destination) {
         try {
-            route = calculateRoute(origin, destination);
-
+            DirectionsResult result = DirectionsApi.newRequest(context)
+                    .origin(new com.google.maps.model.LatLng(origin.latitude, origin.longitude))
+                    .destination(new com.google.maps.model.LatLng(destination.latitude, destination.longitude))
+                    .mode(TravelMode.DRIVING)
+                    .await();
             if (currentPolyline != null) {
                 currentPolyline.remove();
             }
+            route = result.routes[0];
             PolylineOptions polylineOptions = new PolylineOptions()
                     .color(Color.BLUE)
-                    .width(10);
+                    .width(5);
 
             route.overviewPolyline.decodePath().forEach(point ->
                     polylineOptions.add(new LatLng(point.lat, point.lng)));
@@ -251,31 +242,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         }
     }
 
-    private DirectionsRoute calculateRoute(LatLng origin, LatLng destination) throws ApiException, InterruptedException, IOException {
-        DirectionsResult result = DirectionsApi.newRequest(context)
-                .origin(new com.google.maps.model.LatLng(origin.latitude, origin.longitude))
-                .destination(new com.google.maps.model.LatLng(destination.latitude, destination.longitude))
-                .mode(TravelMode.DRIVING)
-                .await();
-
-        return result.routes[0];
-    }
-
-
     /**
      * Dato un percorso restituisce la durata in minuti
      * @param route percorso
      */
     private double getRouteDurationMinutes(DirectionsRoute route){
-        if(route != null) {
-            long secondi = route.legs[0].duration.inSeconds;
-            int minuti = (int) (secondi / 60);
-            long secondiRimanenti = secondi % 60;
-            if (secondiRimanenti >= 30) {
-                minuti++; // Round up to the next minute
-            }
-            return minuti;
-        }
+        if(route!=null)
+            return (double)route.legs[0].duration.inSeconds / 60;
         return -1;
     }
 
@@ -284,18 +257,15 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
      * @param route percorso
      */
     private double getRouteDistanceKm(DirectionsRoute route){
-        if(route != null)
+        if(route!=null)
             return (double)route.legs[0].distance.inMeters / 1000;
-        return -1;
+        return -1;    
     }
-
     
     /**
      * Legge dal db le stazioni vicine alla posizione di riferimento, che può essere
-     * la posizione attuale dell'utente oppure il luogo specifico cercato.
-     * Il raggio di default è 5km.
-     * Se la lista è vuota aumenta il raggio e ripete la query.
-     *
+     * la posizione attuale dell'utente oppure il luogo specifico cercato. Il raggio di default
+     * è 5km. Se la lista è vuota aumenta il raggio e ripete la query.
      * @param userLocation La posizione dell'utente o quella da lui cercata
      * @return List di StazioniDiRifornimento entro 5km dalla posizione.
      */
@@ -322,8 +292,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             }
         }
 
+        // Now, it's safe to query the database
         dbConnection = db.getReadableDatabase();
-        double km = 1.5; // raggio di default
+        // raggio di default
+        double km = 5;
 
         do {
             // fattori in gradi per il calcolo della distanza di 2.5km dalla userLocation
@@ -337,12 +309,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             double minLatitude = userLocation.latitude - lat;
             double maxLongitude = userLocation.longitude + lon;
             double minLongitude = userLocation.longitude - lon;
-
             String query = "SELECT s.IdImpianto, s.bandiera, s.comune, s.latitudine, s.longitudine, MIN(c.prezzo) AS minPrezzo " +
                     "FROM stazioni s NATURAL JOIN carburanti c " +
                     "WHERE s.latitudine BETWEEN \'" + minLatitude + "\' AND \'" + maxLatitude +
                     "\' AND s.longitudine BETWEEN \'" + minLongitude + "\' AND \'" + maxLongitude +
-                    "\' AND descCarburante LIKE 'Benzina%' " +
+                    "\' AND descCarburante LIKE  'Benzina%' " +
                     "GROUP BY s.IdImpianto, s.bandiera, s.comune, s.latitudine, s.longitudine";
 
             Cursor cursor = dbConnection.rawQuery(query, new String[]{});
@@ -352,19 +323,19 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     do {
                         String id = cursor.getString(0);
                         String bandiera = cursor.getString(1);
+                        String comuneFromDb = cursor.getString(2);
                         double latitudine = cursor.getDouble(3);
                         double longitudine = cursor.getDouble(4);
                         double prezzo = cursor.getDouble(5);
-                        LatLng coordinate = new LatLng(latitudine, longitudine);
 
-                        listaStazioni.add(new StazioneDiRifornimento(Integer.parseInt(id), bandiera, prezzo, coordinate));
+                        listaStazioni.add(new StazioneDiRifornimento(Integer.parseInt(id), bandiera, prezzo, new LatLng(latitudine, longitudine)));
                     } while (cursor.moveToNext());
                 }
                 cursor.close();
             }
-            km += 1;
+            km += 2;
             // se la lista è vuota ripete la query fino ad un raggio massimo di 40km
-        } while (listaStazioni.isEmpty() && km < 40);
+        }while (listaStazioni.isEmpty() && km < 40);
 
         dbConnection.close();
         return listaStazioni;
@@ -394,5 +365,4 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             }
         }
     }
-
 }
