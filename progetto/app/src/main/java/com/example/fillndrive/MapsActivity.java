@@ -57,6 +57,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private EditText searchEditText;
     private GeoApiContext context;
     private LatLng currentLocation;
+    private SharedPreferences preferences;
     protected static Polyline currentPolyline;
     protected static DirectionsRoute route;
 
@@ -294,9 +295,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         // Now, it's safe to query the database
         dbConnection = db.getReadableDatabase();
+
         // raggio di default
         double km = 5;
 
+        // prende dalla cache i filtri selezionati dall'utente
+        preferences = MainActivity.getPreferences();
         do {
             // fattori in gradi per il calcolo della distanza di 2.5km dalla userLocation
             // 1 deg latitude = 110.574km
@@ -313,8 +317,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     "FROM stazioni s NATURAL JOIN carburanti c " +
                     "WHERE s.latitudine BETWEEN \'" + minLatitude + "\' AND \'" + maxLatitude +
                     "\' AND s.longitudine BETWEEN \'" + minLongitude + "\' AND \'" + maxLongitude +
-                    "\' AND descCarburante LIKE  'Benzina%' " +
-                    "GROUP BY s.IdImpianto, s.bandiera, s.comune, s.latitudine, s.longitudine";
+                    "\' AND descCarburante LIKE \'" + preferences.getString("fuel", "Benzina%") +
+                    "\' AND isSelf=\'" + preferences.getInt("servito", 0) +
+                    "\' GROUP BY s.IdImpianto, s.bandiera, s.comune, s.latitudine, s.longitudine";
 
             Cursor cursor = dbConnection.rawQuery(query, new String[]{});
 
