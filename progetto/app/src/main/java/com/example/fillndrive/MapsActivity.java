@@ -76,6 +76,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         searchEditText = findViewById(R.id.search_edit_text);
         Button searchButton = findViewById(R.id.search_button);
+        Button homeButton = findViewById(R.id.home_button); // Aggiunto il riferimento al pulsante "Home"
 
         searchButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -84,11 +85,22 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             }
         });
 
+        // Aggiunto il listener per il pulsante "Home"
+        homeButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                // Aggiungi qui la logica per navigare al primo fragment o all'attività principale
+                Intent intent = new Intent(MapsActivity.this, MainActivity.class);
+                startActivity(intent);
+            }
+        });
+
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
     }
+
 
     private void performSearch() {
         String location = searchEditText.getText().toString();
