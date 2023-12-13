@@ -35,6 +35,7 @@ import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
+import com.google.common.collect.Lists;
 import com.google.maps.DirectionsApi;
 import com.google.maps.GeoApiContext;
 import com.google.maps.errors.ApiException;
@@ -96,7 +97,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
      */
     private void performSearch() {
         String location = searchEditText.getText().toString();
-        if (location != null && !location.equals("")) {
+        if (!location.equals("")) {
             List<Address> addressList = null;
 
             // Utilizza un Geocoder per cercare l'indirizzo
@@ -146,26 +147,58 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     // Trova la lista di stazioni in un raggio di 5km
                     List<StazioneDiRifornimento> listaStazioni = getListaStazioni(currentLocation);
 
-                    // Per ogni stazione, calcola la distanza dalla posizione corrente
-                    listaStazioni.forEach(stazione -> {
-                        try {
-                            double distanza = calcolaDistanza(stazione, currentLocation);
-                            stazione.setDistanzaInKm(distanza);
+                    if (!listaStazioni.isEmpty()) {
 
-                        } catch (IOException | InterruptedException | ApiException e) {
-                            Log.e(TAG, "An error occurred: " + e.getMessage(), e);
+                        // Per ogni stazione, calcola la distanza dalla posizione corrente
+                        listaStazioni.forEach(stazione -> {
+                            try {
+                                double distanza = calcolaDistanza(stazione, currentLocation);
+                                stazione.setDistanzaInKm(distanza);
+
+                            } catch (IOException | InterruptedException | ApiException e) {
+                                Log.e(TAG, "An error occurred: " + e.getMessage(), e);
+                            }
+                        });
+
+                        // STEP 1. Imposta l'indice di consumo e in base a questo ordina la lista
+                        listaStazioni.forEach(stazione -> stazione.setIndiceConsumo(calcolaIndice(stazione)));
+
+                        List<StazioneDiRifornimento> listaStazioniOrdinataPerIndice = listaStazioni.stream()
+                                .sorted(Comparator.comparingDouble(StazioneDiRifornimento::getIndiceConsumo))
+                                .collect(Collectors.toList());
+
+                        // STEP 2. Ordina la lista per convenienza considerando 500 mt come distanza trascurabile
+                        List<StazioneDiRifornimento> listaStazioniOrdinata = ordinaPrezzoCrescenteOgni500mt(listaStazioniOrdinataPerIndice);
+
+                        // Imposta il percorso di default per la stazione più conveniente
+                        StazioneDiRifornimento stazionePredefinita = listaStazioniOrdinata.stream().findFirst().orElse(null);
+                        Marker marker = createNewMarker(stazionePredefinita, BitmapDescriptorFactory.HUE_GREEN);
+                        showMarkerInformation(marker);
+                        drawRoute(currentLocation, marker.getPosition());
+                        listaStazioniOrdinata.remove(0);
+
+                        // STEP 3. Divide la lista in 3 parti uguali sulle quali stabilisce il colore del marker
+                        int partitionSize = (int) Math.ceil((double) listaStazioniOrdinata.size() / 3);
+                        List<List<StazioneDiRifornimento>> partitions = Lists.partition(listaStazioniOrdinata, partitionSize);
+                        List<StazioneDiRifornimento> part1 = partitions.get(0);
+                        List<StazioneDiRifornimento> part2;
+                        List<StazioneDiRifornimento> part3;
+
+                        createMarkersIntoMap(part1, BitmapDescriptorFactory.HUE_GREEN);
+                        if (partitions.size() == 3) {
+                            part3 = partitions.get(2);
+                            createMarkersIntoMap(part3, BitmapDescriptorFactory.HUE_RED);
                         }
-                    });
+                        if (partitions.size() >= 2) {
+                            part2 = partitions.get(1);
+                            createMarkersIntoMap(part2, BitmapDescriptorFactory.HUE_YELLOW);
+                        }
+                    }
+                    else {
+                        Toast.makeText(MapsActivity.this, "Nessun distributore rilevato nelle vicinanze.", Toast.LENGTH_SHORT).show();
+                    }
 
-                    listaStazioni.forEach(stazione -> stazione.setIndiceConsumo(calcolaIndice(stazione)));
-
-                    List<StazioneDiRifornimento> listaStazioniOrdinata = listaStazioni.stream()
-                            .sorted(Comparator.comparingDouble(StazioneDiRifornimento::getIndiceConsumo))
-                            .collect(Collectors.toList());
-
-                    createMarkers(listaStazioni);
-
-                    googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(currentLocation, 14));
+                    googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(currentLocation, 15));
                 }
             });
 
@@ -178,6 +211,38 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             });
 
         }
+    }
+
+    private List<StazioneDiRifornimento> ordinaPrezzoCrescenteOgni500mt(List<StazioneDiRifornimento> listaStazioniOrdinataPerIndice) {
+        List<StazioneDiRifornimento> listaOrdinata = new ArrayList<>();
+        List<List<StazioneDiRifornimento>> partizioniPerDistanza = new ArrayList<>();
+
+        // Divide la lista in partizioni. Ogni partizione contiene le stazioni ubicate al massimo a 500 mt di distanza dalle altre.
+        for (StazioneDiRifornimento stazione : listaStazioniOrdinataPerIndice) {
+            boolean aggiuntaAllaPartizione = false;
+
+            for (List<StazioneDiRifornimento> partizione : partizioniPerDistanza) {
+                if (partizione.stream().allMatch(s -> Math.abs(s.getDistanzaInKm() - stazione.getDistanzaInKm()) <= 0.500)) {
+                    partizione.add(stazione);
+                    aggiuntaAllaPartizione = true;
+                    break;
+                }
+            }
+
+            if (!aggiuntaAllaPartizione) {
+                List<StazioneDiRifornimento> novaPartizione = new ArrayList<>();
+                novaPartizione.add(stazione);
+                partizioniPerDistanza.add(novaPartizione);
+            }
+        }
+
+        // Ordina ogni partizione per prezzo crescente e crea una lista unica
+        for (List<StazioneDiRifornimento> partizione : partizioniPerDistanza) {
+            partizione.sort(Comparator.comparingDouble(s -> s.getPrezzo()));
+            listaOrdinata.addAll(partizione);
+        }
+
+        return listaOrdinata;
     }
 
     private double calcolaIndice(StazioneDiRifornimento stazione) {
@@ -215,14 +280,24 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
      * Crea i marker sulla mappa corrispondenti alle stazioni di rifornimento trovate.
      * @param listaStazioni
      */
-    private void createMarkers(List<StazioneDiRifornimento> listaStazioni) {
+    private void createMarkersIntoMap(List<StazioneDiRifornimento> listaStazioni, float colorCode) {
         for (StazioneDiRifornimento stazione : listaStazioni) {
-            googleMap.addMarker(new MarkerOptions()
-                    .position(stazione.getCoordinate())
-                    .title(String.valueOf(stazione.getPrezzo()))
-                    .snippet(stazione.getBandiera())
-                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE))); //TODO: cambiare colore icona marker
+            googleMap.addMarker(createMarkerOptions(stazione, colorCode));
         }
+    }
+
+    @NonNull
+    private MarkerOptions createMarkerOptions(StazioneDiRifornimento stazione, float colorCode) {
+        return new MarkerOptions()
+                .position(stazione.getCoordinate())
+                .title(String.valueOf(stazione.getPrezzo()))
+                .snippet(stazione.getBandiera())
+                .icon(BitmapDescriptorFactory.defaultMarker(colorCode));
+    }
+
+    private Marker createNewMarker(StazioneDiRifornimento stazione, float colorCode) {
+        MarkerOptions markerOptions = createMarkerOptions(stazione, colorCode);
+        return googleMap.addMarker(markerOptions);
     }
 
     /** 
@@ -266,7 +341,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
      * Dato un percorso restituisce la durata in minuti
      * @param route percorso
      */
-    private double getRouteDurationMinutes(DirectionsRoute route){
+    private int getRouteDurationMinutes(DirectionsRoute route){
         if(route != null) {
             long secondi = route.legs[0].duration.inSeconds;
             int minuti = (int) (secondi / 60);
@@ -293,7 +368,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     /**
      * Legge dal db le stazioni vicine alla posizione di riferimento, che può essere
      * la posizione attuale dell'utente oppure il luogo specifico cercato.
-     * Il raggio di default è 5km.
+     * Il raggio di default è 1.5 km.
      * Se la lista è vuota aumenta il raggio e ripete la query.
      *
      * @param userLocation La posizione dell'utente o quella da lui cercata
@@ -315,7 +390,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 // Aggiorna la data nelle preferenze condivise
                 SharedPreferences.Editor editor = DateUtility.getSharedPreferences(MapsActivity.this).edit();
                 editor.putInt("day", currentDay);
-                editor.commit();
+                editor.apply();
 
             } catch (InterruptedException e) {
                 Log.e(TAG, "An error occurred: " + e.getMessage(), e);
@@ -364,7 +439,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             }
             km += 1;
             // se la lista è vuota ripete la query fino ad un raggio massimo di 40km
-        } while (listaStazioni.isEmpty() && km < 40);
+        } while (listaStazioni.isEmpty() && km < 25);
 
         dbConnection.close();
         return listaStazioni;
