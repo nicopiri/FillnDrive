@@ -190,21 +190,24 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                         drawRoute(currentLocation, marker.getPosition());
                         listaStazioniOrdinata.remove(0);
 
-                        // STEP 3. Divide la lista in 3 parti uguali sulle quali stabilisce il colore del marker
-                        int partitionSize = (int) Math.ceil((double) listaStazioniOrdinata.size() / 3);
-                        List<List<StazioneDiRifornimento>> partitions = Lists.partition(listaStazioniOrdinata, partitionSize);
-                        List<StazioneDiRifornimento> part1 = partitions.get(0);
-                        List<StazioneDiRifornimento> part2;
-                        List<StazioneDiRifornimento> part3;
+                        if (!listaStazioniOrdinata.isEmpty()) {
 
-                        createMarkersIntoMap(part1, BitmapDescriptorFactory.HUE_GREEN);
-                        if (partitions.size() == 3) {
-                            part3 = partitions.get(2);
-                            createMarkersIntoMap(part3, BitmapDescriptorFactory.HUE_RED);
-                        }
-                        if (partitions.size() >= 2) {
-                            part2 = partitions.get(1);
-                            createMarkersIntoMap(part2, BitmapDescriptorFactory.HUE_YELLOW);
+                            // STEP 3. Divide la lista in 3 parti uguali sulle quali stabilisce il colore del marker
+                            int partitionSize = (int) Math.ceil((double) listaStazioniOrdinata.size() / 3);
+                            List<List<StazioneDiRifornimento>> partitions = Lists.partition(listaStazioniOrdinata, partitionSize);
+                            List<StazioneDiRifornimento> part1 = partitions.get(0);
+                            List<StazioneDiRifornimento> part2;
+                            List<StazioneDiRifornimento> part3;
+
+                            createMarkersIntoMap(part1, BitmapDescriptorFactory.HUE_GREEN);
+                            if (partitions.size() == 3) {
+                                part3 = partitions.get(2);
+                                createMarkersIntoMap(part3, BitmapDescriptorFactory.HUE_RED);
+                            }
+                            if (partitions.size() >= 2) {
+                                part2 = partitions.get(1);
+                                createMarkersIntoMap(part2, BitmapDescriptorFactory.HUE_YELLOW);
+                            }
                         }
                     }
                     else {
