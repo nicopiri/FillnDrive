@@ -1,17 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
     <!-- Unselected state -->
-    <item android:drawable="@drawable/custom_radio_unselected" android:state_checked="false" />
+    <item android:drawable="@drawable/custom_radio_unselected" android:state_checked="false"/>
 
     <!-- Selected state -->
     <item android:drawable="@drawable/custom_radio_selected" android:state_checked="true" />
 
-    <!-- Border -->
-    <item>
-        <shape android:shape="rectangle">
-            <stroke
-                android:width="2dp"
-                android:color="#808080" />
-        </shape>
-    </item>
 </selector>
