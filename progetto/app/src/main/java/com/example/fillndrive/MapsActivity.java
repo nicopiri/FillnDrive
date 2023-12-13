@@ -1,6 +1,7 @@
 package com.example.fillndrive;
 
 import static androidx.constraintlayout.helper.widget.MotionEffect.TAG;
+
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
@@ -15,7 +16,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
-import android.view.View;
+
 import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -62,6 +63,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private SharedPreferences preferences;
     protected static Polyline currentPolyline;
     protected DirectionsRoute route;
+    private static final String DIESEL_QUERY = "\'Gasolio%\' OR \'Diesel%\'";
 
 
 
@@ -413,6 +415,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         // prende dalla cache i filtri selezionati dall'utente
         preferences = MainActivity.getPreferences();
+        String clausolaCarburante = "\'"+ preferences.getString("fuel", "Benzina%") +"\'";
+        if (clausolaCarburante != null && clausolaCarburante.contains("Gasolio%")){
+            clausolaCarburante = DIESEL_QUERY;
+        }
 
         do {
             // fattori in gradi per il calcolo della distanza di 2.5km dalla userLocation
@@ -431,8 +437,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     "FROM stazioni s NATURAL JOIN carburanti c " +
                     "WHERE s.latitudine BETWEEN \'" + minLatitude + "\' AND \'" + maxLatitude +
                     "\' AND s.longitudine BETWEEN \'" + minLongitude + "\' AND \'" + maxLongitude +
-                    "\' AND descCarburante LIKE \'" + preferences.getString("fuel", "Benzina%") +
-                    "\' AND isSelf=\'" + preferences.getInt("servito", 0) +
+                    "\' AND descCarburante LIKE " + clausolaCarburante +
+                    " AND isSelf=\'" + preferences.getInt("servito", 1) +
                     "\' GROUP BY s.IdImpianto, s.bandiera, s.comune, s.latitudine, s.longitudine";
 
             Cursor cursor = dbConnection.rawQuery(query, new String[]{});
