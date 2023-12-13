@@ -30,7 +30,7 @@ public class CustomMarkerInfoFragment extends BottomSheetDialogFragment {
         CustomMarkerInfoFragment fragment = new CustomMarkerInfoFragment();
         Bundle args = new Bundle();
         args.putString("title", title);
-        args.putString("snippet", snippet);
+        args.putString("snippet", snippet); 
         args.putString("info", info);
         args.putParcelable("coordinates", coordinates);
         fragment.setArguments(args);
