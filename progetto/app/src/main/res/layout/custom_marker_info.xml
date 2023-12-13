@@ -1,44 +1,48 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="vertical"
     android:padding="16dp"
     android:background="@android:color/black">
 
-
     <TextView
         android:id="@+id/titleTextView"
-        android:layout_width="match_parent"
+        android:layout_width="280dp"
         android:layout_height="wrap_content"
         android:textSize="18sp"
-        android:textStyle="bold"/>
+        android:textStyle="bold" />
 
     <TextView
         android:id="@+id/snippetTextView"
-        android:layout_width="match_parent"
+        android:layout_width="280dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"/>
+        android:layout_below="@id/titleTextView"
+        android:layout_marginTop="15dp" />
 
     <TextView
         android:id="@+id/infoTextView"
-        android:layout_width="match_parent"
+        android:layout_width="280dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"/>
+        android:layout_below="@id/snippetTextView"
+        android:layout_marginTop="15dp" />
 
 
     <Button
         android:id="@+id/startRouteButton"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Avvia Percorso"/>
-
+        android:layout_width="72dp"
+        android:layout_height="52dp"
+        android:layout_marginStart="303dp"
+        android:layout_marginTop="55dp"
+        android:background="@drawable/direction"
+        android:onClick="onStartRouteClick" />
 
     <Button
         android:id="@+id/closeButton"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Chiudi"/>
+        android:layout_width="52dp"
+        android:layout_height="42dp"
+        android:layout_marginStart="303dp"
+        android:layout_marginTop="0dp"
+        android:background="@drawable/close"
+        android:onClick="onStartRouteClick" />
 
-
-</LinearLayout>
+</RelativeLayout>
