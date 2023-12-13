@@ -1,11 +1,15 @@
 package com.example.fillndrive;
 
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.CompoundButton;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.navigation.NavController;
@@ -23,6 +27,7 @@ public class MainActivity extends AppCompatActivity {
     private DBHelper db;
     private AppBarConfiguration appBarConfiguration;
     private ActivityMainBinding binding;
+    private static SharedPreferences preferences;
 
 
     @Override
@@ -45,6 +50,16 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
+        //prova a prelevare le preferenze in cache
+        preferences = getSharedPreferences("fuelAndService", Context.MODE_PRIVATE);
+
+        //se le preferenze sono impostate allora carica la MapsActivity altrimenti prosegue
+        if(preferences.getBoolean("cache", false)){
+            Intent intent = new Intent(this, MapsActivity.class);
+            startActivity(intent);
+        }
+
+        //inflate del layout scelta carburante e tipo di servizio
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
@@ -53,6 +68,53 @@ public class MainActivity extends AppCompatActivity {
         NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment_content_main);
         appBarConfiguration = new AppBarConfiguration.Builder(navController.getGraph()).build();
         NavigationUI.setupActionBarWithNavController(this, navController, appBarConfiguration);
+
+
+        SharedPreferences.Editor editor = preferences.edit();
+        // Listener per la selezione del carburante
+        binding.fuelRadioGroup.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(RadioGroup radioGroup, int fuelId) {
+
+                RadioButton selectedButton = findViewById(fuelId);
+                String buttonText = selectedButton.getText().toString();
+
+                //Salva o aggiorna la preferenza sul carburante
+                switch (buttonText){
+                    case "Diesel":
+                        editor.putString("fuel", "Gasolio%"); //Blue Diesel?
+                        break;
+                    case "GPL":
+                        editor.putString("fuel", "GPL%");
+                        break;
+                    case "Metano":
+                        editor.putString("fuel", "Metano%");
+                        break;
+
+                    default:
+                        editor.putString("fuel", "Benzina%");
+                        break;
+                }
+                editor.putBoolean("cache", true);
+                editor.apply();
+            }
+        });
+        // Listener per lo switch dell'opzione Self_service
+        binding.serviceSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
+                //Salva o aggiorna la preferenza sul tipo di servizio
+                if(isChecked){
+                    //lo switch è checked (di default)
+                    editor.putInt("servito", 0);
+                }
+                else{
+                    editor.putInt("servito", 1);
+                }
+                editor.putBoolean("cache", true);
+                editor.apply();
+            }
+        });
 
         binding.cercaButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -90,5 +152,9 @@ public class MainActivity extends AppCompatActivity {
         NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment_content_main);
         return NavigationUI.navigateUp(navController, appBarConfiguration)
                 || super.onSupportNavigateUp();
+    }
+
+    public static SharedPreferences getPreferences() {
+        return preferences;
     }
 }

@@ -1,30 +1,49 @@
-<LinearLayout
+<RelativeLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:map="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/mapContainer"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical">
+    android:layout_height="match_parent">
 
     <EditText
         android:id="@+id/search_edit_text"
-        android:layout_width="match_parent"
+        android:layout_width="257dp"
         android:layout_height="wrap_content"
         android:hint="Cerca indirizzo o luogo"
         android:inputType="text"
-        android:padding="10dp"/>
+        android:padding="10dp" />
 
     <Button
         android:id="@+id/search_button"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Cerca"/>
+        android:layout_width="46dp"
+        android:layout_height="42dp"
+        android:layout_below="@id/search_edit_text"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="-42dp"
+        android:layout_marginEnd="22dp"
+        android:layout_toStartOf="@+id/home_button"
+        android:background="@drawable/searchbutton10"
+        android:onClick="onSearchButtonClick" />
+
+    <Button
+        android:id="@+id/home_button"
+        android:layout_width="38dp"
+        android:layout_height="37dp"
+        android:layout_below="@id/search_edit_text"
+        android:layout_alignParentEnd="true"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="-40dp"
+        android:layout_marginEnd="23dp"
+        android:background="@drawable/homebutton10"
+        android:onClick="onHomeButtonClick" />
 
     <fragment
         android:id="@+id/map"
         android:name="com.google.android.gms.maps.SupportMapFragment"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:layout_below="@id/search_button"
+        android:layout_marginTop="8dp"
         tools:context=".MapsActivity" />
-</LinearLayout>
+</RelativeLayout>

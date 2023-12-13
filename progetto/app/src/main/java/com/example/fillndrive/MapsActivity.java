@@ -1,7 +1,6 @@
 package com.example.fillndrive;
 
 import static androidx.constraintlayout.helper.widget.MotionEffect.TAG;
-
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
@@ -16,7 +15,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
-
+import android.view.View;
 import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -60,6 +59,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private EditText searchEditText;
     private GeoApiContext context;
     private LatLng currentLocation;
+    private SharedPreferences preferences;
     protected static Polyline currentPolyline;
     protected DirectionsRoute route;
 
@@ -78,11 +78,22 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         searchEditText = findViewById(R.id.search_edit_text);
         Button searchButton = findViewById(R.id.search_button);
+        Button homeButton = findViewById(R.id.home_button); // Aggiunto il riferimento al pulsante "Home"
 
         searchButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 performSearch();
+            }
+        });
+
+        // Aggiunto il listener per il pulsante "Home"
+        homeButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                // Aggiungi qui la logica per navigare al primo fragment o all'attività principale
+                Intent intent = new Intent(MapsActivity.this, MainActivity.class);
+                startActivity(intent);
             }
         });
 
@@ -97,7 +108,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
      */
     private void performSearch() {
         String location = searchEditText.getText().toString();
-        if (!location.equals("")) {
+        if (location != null && !location.equals("")) {
             List<Address> addressList = null;
 
             // Utilizza un Geocoder per cercare l'indirizzo
@@ -400,6 +411,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         dbConnection = db.getReadableDatabase();
         double km = 1.5; // raggio di default
 
+        // prende dalla cache i filtri selezionati dall'utente
+        preferences = MainActivity.getPreferences();
+
         do {
             // fattori in gradi per il calcolo della distanza di 2.5km dalla userLocation
             // 1 deg latitude = 110.574km
@@ -417,8 +431,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     "FROM stazioni s NATURAL JOIN carburanti c " +
                     "WHERE s.latitudine BETWEEN \'" + minLatitude + "\' AND \'" + maxLatitude +
                     "\' AND s.longitudine BETWEEN \'" + minLongitude + "\' AND \'" + maxLongitude +
-                    "\' AND descCarburante LIKE 'Benzina%' " +
-                    "GROUP BY s.IdImpianto, s.bandiera, s.comune, s.latitudine, s.longitudine";
+                    "\' AND descCarburante LIKE \'" + preferences.getString("fuel", "Benzina%") +
+                    "\' AND isSelf=\'" + preferences.getInt("servito", 0) +
+                    "\' GROUP BY s.IdImpianto, s.bandiera, s.comune, s.latitudine, s.longitudine";
 
             Cursor cursor = dbConnection.rawQuery(query, new String[]{});
 

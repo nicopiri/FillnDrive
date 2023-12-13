@@ -8,6 +8,7 @@
     tools:context=".MainActivity">
 
     <com.google.android.material.appbar.AppBarLayout
+        android:id="@+id/appBarLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:fitsSystemWindows="true">
@@ -15,26 +16,126 @@
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize" >
+            android:layout_height="?attr/actionBarSize">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:orientation="horizontal"
-                android:gravity="center_vertical">
+                android:background="#2E2E2E"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+                <!-- Logo a sinistra -->
+                <ImageView
+                    android:id="@+id/logoLeft"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_alignParentStart="true"
+                    android:layout_centerVertical="true" />
 
-                <!-- TextView for text -->
+                <ImageView
+                    android:id="@+id/logoRight"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true" />
+
                 <TextView
                     android:id="@+id/toolbarText"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/app_name" />
+                    android:layout_centerInParent="true"
+                    android:elegantTextHeight="true"
+                    android:text="@string/app_name"
+                    android:textColor="#FFFFFF"
 
-                <!-- Include the menu_main.xml
-                <include layout="@menu/menu_main" /> -->
+                    android:textSize="40dp"
+                    android:textStyle="italic" />
+
+
+                <!-- Logo a destra -->
+
+
             </LinearLayout>
 
         </com.google.android.material.appbar.MaterialToolbar>
+
+        <RadioGroup
+            android:id="@+id/fuelRadioGroup"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="#7A7777"
+            android:orientation="vertical"
+            android:padding="10dp">
+
+            <RadioButton
+                android:id="@+id/radioButton1"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@color/white"
+                android:button="@drawable/custom_radio_button"
+                android:checked="true"
+                android:text="@string/benzina"
+                android:textAlignment="center"
+                android:textSize="30sp" />
+
+            <RadioButton
+                android:id="@+id/radioButton2"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:background="@color/white"
+                android:button="@drawable/custom_radio_button"
+                android:text="@string/diesel"
+                android:textAlignment="center"
+                android:textSize="30sp" />
+
+            <RadioButton
+                android:id="@+id/radioButton3"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:background="@color/white"
+                android:button="@drawable/custom_radio_button"
+                android:text="@string/gpl"
+                android:textAlignment="center"
+                android:textSize="30sp" />
+
+            <RadioButton
+                android:id="@+id/radioButton4"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:background="@color/white"
+                android:button="@drawable/custom_radio_button"
+                android:text="@string/metano"
+                android:textAlignment="center"
+                android:textSize="30sp" />
+
+        </RadioGroup>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_gravity="end"
+            android:layout_marginTop="20dp"
+            android:background="#7A7777"
+            android:orientation="horizontal"
+            android:padding="10dp">
+
+            <!-- Label with random text -->
+            <com.google.android.material.switchmaterial.SwitchMaterial
+                android:id="@+id/serviceSwitch"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/labelService"
+                android:textSize="30sp"
+                android:checked="true"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+
+        </LinearLayout>
 
     </com.google.android.material.appbar.AppBarLayout>
 
@@ -46,9 +147,9 @@
 
     <Button
         android:id="@+id/cercaButton"
-        android:layout_width="100dp"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_gravity="bottom|end"
+        android:layout_gravity="bottom|center_horizontal"
         android:layout_margin="16dp"
         android:text="@string/cerca" />
 
