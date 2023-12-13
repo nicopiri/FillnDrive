@@ -82,7 +82,7 @@ public class MainActivity extends AppCompatActivity {
                 //Salva o aggiorna la preferenza sul carburante
                 switch (buttonText){
                     case "Diesel":
-                        editor.putString("fuel", "Gasolio%"); //Blue Diesel?
+                        editor.putString("fuel", "Gasolio%"); //Blue Diesel?s
                         break;
                     case "GPL":
                         editor.putString("fuel", "GPL%");
@@ -105,11 +105,11 @@ public class MainActivity extends AppCompatActivity {
             public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
                 //Salva o aggiorna la preferenza sul tipo di servizio
                 if(isChecked){
-                    //lo switch è checked (di default)
-                    editor.putInt("servito", 0);
+                    //lo switch è checked (di default) -> isSelf = true
+                    editor.putInt("self", 1);
                 }
                 else{
-                    editor.putInt("servito", 1);
+                    editor.putInt("self", 0);
                 }
                 editor.putBoolean("cache", true);
                 editor.apply();

@@ -419,6 +419,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         if (clausolaCarburante != null && clausolaCarburante.contains("Gasolio%")){
             clausolaCarburante = DIESEL_QUERY;
         }
+        int clausolaSelf = preferences.getInt("self", 1);
+        if(clausolaCarburante != null && clausolaCarburante.contains("Metano%")){
+            clausolaSelf = 0;
+        }
 
         do {
             // fattori in gradi per il calcolo della distanza di 2.5km dalla userLocation
@@ -438,7 +442,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     "WHERE s.latitudine BETWEEN \'" + minLatitude + "\' AND \'" + maxLatitude +
                     "\' AND s.longitudine BETWEEN \'" + minLongitude + "\' AND \'" + maxLongitude +
                     "\' AND descCarburante LIKE " + clausolaCarburante +
-                    " AND isSelf=\'" + preferences.getInt("servito", 1) +
+                    " AND isSelf=\'" + clausolaSelf +
                     "\' GROUP BY s.IdImpianto, s.bandiera, s.comune, s.latitudine, s.longitudine";
 
             Cursor cursor = dbConnection.rawQuery(query, new String[]{});
