@@ -423,9 +423,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             clausolaCarburante = DIESEL_QUERY;
         }
         int clausolaSelf = preferences.getInt("self", 1);
-        if(clausolaCarburante != null && clausolaCarburante.contains("Metano%")){
-            clausolaSelf = 0;
-        }
 
         do {
             // fattori in gradi per il calcolo della distanza di 2.5km dalla userLocation
