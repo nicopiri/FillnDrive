@@ -3,7 +3,7 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:padding="16dp"
-    android:background="@android:color/black">
+    android:background="#757575">
 
     <TextView
         android:id="@+id/titleTextView"
@@ -29,7 +29,7 @@
 
     <Button
         android:id="@+id/startRouteButton"
-        android:layout_width="72dp"
+        android:layout_width="52dp"
         android:layout_height="52dp"
         android:layout_marginStart="303dp"
         android:layout_marginTop="55dp"
@@ -38,9 +38,9 @@
 
     <Button
         android:id="@+id/closeButton"
-        android:layout_width="52dp"
+        android:layout_width="42dp"
         android:layout_height="42dp"
-        android:layout_marginStart="303dp"
+        android:layout_marginStart="309dp"
         android:layout_marginTop="0dp"
         android:background="@drawable/close"
         android:onClick="onStartRouteClick" />
