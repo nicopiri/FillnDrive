@@ -219,10 +219,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             });
 
             googleMap.setOnMarkerClickListener(marker -> {
-                showMarkerInformation(marker);
                 drawRoute(currentLocation, marker.getPosition());
-                Toast.makeText(MapsActivity.this, "Il percorso dura: " + getRouteDurationMinutes(route) + " minuti.", Toast.LENGTH_SHORT).show();
-                Toast.makeText(MapsActivity.this, "Il percorso è lungo: " + getRouteDistanceKm(route) + " km.", Toast.LENGTH_SHORT).show();
+                showMarkerInformation(marker);
                 return true;
             });
 
@@ -279,7 +277,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         LatLng coordinates = marker.getPosition();
         String title = marker.getTitle() + " €";
         String snippet = marker.getSnippet();
-        String info = "Custom info";
+        String info = getRouteDurationMinutes(route) +  " Minuti  --  " + getRouteDistanceKm(route) +  "Km";
         CustomMarkerInfoFragment infoFragment = CustomMarkerInfoFragment.newInstance(title, snippet, info, coordinates);
 
         // Passa l'istanza di GoogleMap al fragment
