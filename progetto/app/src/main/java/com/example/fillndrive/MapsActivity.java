@@ -282,7 +282,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         return listaOrdinata;
     }
 
-    private Bitmap resizeBitmap(int drawable_id, int width, int height){
+    private Bitmap resizeBitmap(int drawable_id, int dpWidth, int dpHeight){
+        float scale = getResources().getDisplayMetrics().density;
+        int width = (int) (dpWidth * scale + 0.5f);
+        int height = (int) (dpHeight * scale + 0.5f);
+
         Bitmap b = BitmapFactory.decodeResource(getResources(),  drawable_id);
         return Bitmap.createScaledBitmap(b, width, height, false);
     }
