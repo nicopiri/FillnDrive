@@ -201,7 +201,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             Marker marker = createNewMarker(stazionePredefinita, BitmapDescriptorFactory.HUE_GREEN);
 
             // Imposta l'icona del marker predefinito
-            marker.setIcon(BitmapDescriptorFactory.fromBitmap(resizeBitmap(R.drawable.pin, 60, 100)));
+            marker.setIcon(BitmapDescriptorFactory.fromBitmap(resizeBitmap(R.drawable.pin, 37, 63)));
 
             showMarkerInformation(marker);
             drawRoute(location, marker.getPosition());
