@@ -2,6 +2,8 @@ package com.example.fillndrive;
 
 import static androidx.constraintlayout.helper.widget.MotionEffect.TAG;
 
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
@@ -186,6 +188,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                         // Imposta il percorso di default per la stazione più conveniente
                         StazioneDiRifornimento stazionePredefinita = listaStazioniOrdinata.stream().findFirst().orElse(null);
                         Marker marker = createNewMarker(stazionePredefinita, BitmapDescriptorFactory.HUE_GREEN);
+
+                        // Imposta l'icona del marker predefinito
+                        marker.setIcon(BitmapDescriptorFactory.fromBitmap(resizeBitmap(R.drawable.pin, 60, 100)));
+                        
                         showMarkerInformation(marker);
                         drawRoute(currentLocation, marker.getPosition());
                         listaStazioniOrdinata.remove(0);
@@ -257,6 +263,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         }
 
         return listaOrdinata;
+    }
+
+    private Bitmap resizeBitmap(int drawable_id, int width, int height){
+        Bitmap b = BitmapFactory.decodeResource(getResources(),  drawable_id);
+        return Bitmap.createScaledBitmap(b, width, height, false);
     }
 
     private double calcolaIndice(StazioneDiRifornimento stazione) {
