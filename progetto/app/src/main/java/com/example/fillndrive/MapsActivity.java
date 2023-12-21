@@ -59,7 +59,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private static final int REQUEST_LOCATION_PERMISSION = 1;
     private EditText searchEditText;
     private GeoApiContext context;
-    private LatLng currentLocation;
     private SharedPreferences preferences;
     protected static Polyline currentPolyline;
     protected DirectionsRoute route;
@@ -109,6 +108,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
      * Supporta la ricerca per luogo specifico tramite inserimento della città nella barra di ricerca.
      */
     private void performSearch() {
+        // Rimuove tutto ciò che è stato disegnato precedentemente sulla mappa
+        googleMap.clear();
+
         String location = searchEditText.getText().toString();
         if (location != null && !location.equals("")) {
             List<Address> addressList = null;
@@ -124,10 +126,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             if (addressList != null && addressList.size() > 0) {
                 Address address = addressList.get(0);
 
-                // Sposta la camera alla posizione dell'indirizzo trovato
-                LatLng latLng = new LatLng(address.getLatitude(), address.getLongitude());
-                googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 15));
-            } else {
+                LatLng coordinateLuogoCercato = new LatLng(address.getLatitude(), address.getLongitude());
+                findStationsAndDrawMarker(coordinateLuogoCercato);
+            }
+            else {
                 // Mostra un messaggio di errore se l'indirizzo non viene trovato
                 Toast.makeText(MapsActivity.this, "Indirizzo non trovato", Toast.LENGTH_SHORT).show();
             }
@@ -153,81 +155,96 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
             FusedLocationProviderClient locationClient = LocationServices.getFusedLocationProviderClient(this);
             locationClient.getLastLocation().addOnSuccessListener(this, location -> {
-                if (location != null) {
-
-                    currentLocation = new LatLng(location.getLatitude(), location.getLongitude());
-
-                    // Trova la lista di stazioni in un raggio di 5km
-                    List<StazioneDiRifornimento> listaStazioni = getListaStazioni(currentLocation);
-
-                    if (!listaStazioni.isEmpty()) {
-
-                        // Per ogni stazione, calcola la distanza dalla posizione corrente
-                        listaStazioni.forEach(stazione -> {
-                            try {
-                                double distanza = calcolaDistanza(stazione, currentLocation);
-                                stazione.setDistanzaInKm(distanza);
-
-                            } catch (IOException | InterruptedException | ApiException e) {
-                                Log.e(TAG, "An error occurred: " + e.getMessage(), e);
-                            }
-                        });
-
-                        // STEP 1. Imposta l'indice di consumo e in base a questo ordina la lista
-                        listaStazioni.forEach(stazione -> stazione.setIndiceConsumo(calcolaIndice(stazione)));
-
-                        List<StazioneDiRifornimento> listaStazioniOrdinataPerIndice = listaStazioni.stream()
-                                .sorted(Comparator.comparingDouble(StazioneDiRifornimento::getIndiceConsumo))
-                                .collect(Collectors.toList());
-
-                        // STEP 2. Ordina la lista per convenienza considerando 500 mt come distanza trascurabile
-                        List<StazioneDiRifornimento> listaStazioniOrdinata = ordinaPrezzoCrescenteOgni500mt(listaStazioniOrdinataPerIndice);
-
-                        // Imposta il percorso di default per la stazione più conveniente
-                        StazioneDiRifornimento stazionePredefinita = listaStazioniOrdinata.stream().findFirst().orElse(null);
-                        Marker marker = createNewMarker(stazionePredefinita, BitmapDescriptorFactory.HUE_GREEN);
-                        showMarkerInformation(marker);
-                        drawRoute(currentLocation, marker.getPosition());
-                        listaStazioniOrdinata.remove(0);
-
-                        if (!listaStazioniOrdinata.isEmpty()) {
-
-                            // STEP 3. Divide la lista in 3 parti uguali sulle quali stabilisce il colore del marker
-                            int partitionSize = (int) Math.ceil((double) listaStazioniOrdinata.size() / 3);
-                            List<List<StazioneDiRifornimento>> partitions = Lists.partition(listaStazioniOrdinata, partitionSize);
-                            List<StazioneDiRifornimento> part1 = partitions.get(0);
-                            List<StazioneDiRifornimento> part2;
-                            List<StazioneDiRifornimento> part3;
-
-                            createMarkersIntoMap(part1, BitmapDescriptorFactory.HUE_GREEN);
-                            if (partitions.size() == 3) {
-                                part3 = partitions.get(2);
-                                createMarkersIntoMap(part3, BitmapDescriptorFactory.HUE_RED);
-                            }
-                            if (partitions.size() >= 2) {
-                                part2 = partitions.get(1);
-                                createMarkersIntoMap(part2, BitmapDescriptorFactory.HUE_YELLOW);
-                            }
-                        }
-                    }
-                    else {
-                        Toast.makeText(MapsActivity.this, "Nessun distributore rilevato nelle vicinanze.", Toast.LENGTH_SHORT).show();
-                    }
-
-                    googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(currentLocation, 15));
+                if (location != null && !location.equals("")) {
+                    LatLng currentLocation = new LatLng(location.getLatitude(), location.getLongitude());
+                    findStationsAndDrawMarker(currentLocation);
+                }
+                else {
+                    Toast.makeText(MapsActivity.this, "Nessun distributore rilevato nelle vicinanze.", Toast.LENGTH_SHORT).show();
                 }
             });
-
-            googleMap.setOnMarkerClickListener(marker -> {
-                drawRoute(currentLocation, marker.getPosition());
-                showMarkerInformation(marker);
-                return true;
-            });
-
         }
     }
 
-    private List<StazioneDiRifornimento> ordinaPrezzoCrescenteOgni500mt(List<StazioneDiRifornimento> listaStazioniOrdinataPerIndice) {
+    /**
+     * Trova la lista delle stazioni all'interno di un raggio incrementale e le rappresenta nella mappa attraverso dei marker opportunamente colorati.
+     * Definisce inoltre il comportamento all'onclick di ciascun marker.
+     *
+     * @param location corrisponde alla posizione attuale del dispositivo oppure al luogo impostato nella barra di ricerca.
+     */
+    private void findStationsAndDrawMarker(LatLng location) {
+        List<StazioneDiRifornimento> listaStazioni = getListaStazioni(location);
+
+        if (!listaStazioni.isEmpty()) {
+
+            // Per ogni stazione, imposta la distanza dalla posizione scelta
+            listaStazioni.forEach(stazione -> {
+                try {
+                    double distanza = calculateDistance(stazione, location);
+                    stazione.setDistanzaInKm(distanza);
+
+                } catch (IOException | InterruptedException | ApiException e) {
+                    Log.e(TAG, "An error occurred: " + e.getMessage(), e);
+                }
+            });
+
+            // STEP 1. Imposta l'indice di consumo e in base a questo ordina la lista
+            List<StazioneDiRifornimento> listaStazioniOrdinataPerIndice = ordinaPerIndice(listaStazioni);
+
+            // STEP 2. Ordina la lista per convenienza considerando 500 mt come distanza trascurabile
+            List<StazioneDiRifornimento> listaStazioniOrdinata = ordinaPerPrezzoCrescenteOgni500mt(listaStazioniOrdinataPerIndice);
+
+            // Imposta il percorso di default per la stazione più conveniente e la elimina dalla lista
+            StazioneDiRifornimento stazionePredefinita = listaStazioniOrdinata.stream().findFirst().orElse(null);
+            Marker marker = createNewMarker(stazionePredefinita, BitmapDescriptorFactory.HUE_GREEN);
+            showMarkerInformation(marker);
+            drawRoute(location, marker.getPosition());
+            listaStazioniOrdinata.remove(0);
+
+            if (!listaStazioniOrdinata.isEmpty()) {
+
+                // STEP 3. Divide la lista in 3 parti uguali sulle quali stabilisce il colore del marker
+                chooseColorAndDrawMarker(listaStazioniOrdinata);
+            }
+        }
+        googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(location, 15));
+
+        googleMap.setOnMarkerClickListener(marker -> {
+            drawRoute(location, marker.getPosition());
+            showMarkerInformation(marker);
+            return true;
+        });
+    }
+
+    private void chooseColorAndDrawMarker(List<StazioneDiRifornimento> listaStazioniOrdinata) {
+        int partitionSize = (int) Math.ceil((double) listaStazioniOrdinata.size() / 3);
+        List<List<StazioneDiRifornimento>> partitions = Lists.partition(listaStazioniOrdinata, partitionSize);
+        List<StazioneDiRifornimento> part1 = partitions.get(0);
+        List<StazioneDiRifornimento> part2;
+        List<StazioneDiRifornimento> part3;
+
+        createMarkersIntoMap(part1, BitmapDescriptorFactory.HUE_GREEN);
+        if (partitions.size() == 3) {
+            part3 = partitions.get(2);
+            createMarkersIntoMap(part3, BitmapDescriptorFactory.HUE_RED);
+        }
+        if (partitions.size() >= 2) {
+            part2 = partitions.get(1);
+            createMarkersIntoMap(part2, BitmapDescriptorFactory.HUE_YELLOW);
+        }
+    }
+
+    private List<StazioneDiRifornimento> ordinaPerIndice(List<StazioneDiRifornimento> listaStazioni) {
+        listaStazioni.forEach(stazione -> stazione.setIndiceConsumo(calculateIndex(stazione)));
+
+        List<StazioneDiRifornimento> listaStazioniOrdinataPerIndice = listaStazioni.stream()
+                .sorted(Comparator.comparingDouble(StazioneDiRifornimento::getIndiceConsumo))
+                .collect(Collectors.toList());
+
+        return listaStazioniOrdinataPerIndice;
+    }
+
+    private List<StazioneDiRifornimento> ordinaPerPrezzoCrescenteOgni500mt(List<StazioneDiRifornimento> listaStazioniOrdinataPerIndice) {
         List<StazioneDiRifornimento> listaOrdinata = new ArrayList<>();
         List<List<StazioneDiRifornimento>> partizioniPerDistanza = new ArrayList<>();
 
@@ -259,12 +276,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         return listaOrdinata;
     }
 
-    private double calcolaIndice(StazioneDiRifornimento stazione) {
+    private double calculateIndex(StazioneDiRifornimento stazione) {
         double indice = stazione.getDistanzaInKm() * stazione.getPrezzo();
         return Math.round(indice * 1000.0) / 1000.0;
     }
 
-    private double calcolaDistanza(StazioneDiRifornimento stazione, LatLng origin) throws IOException, InterruptedException, ApiException {
+    private double calculateDistance(StazioneDiRifornimento stazione, LatLng origin) throws IOException, InterruptedException, ApiException {
         route = calculateRoute(origin, stazione.getCoordinate());
         return getRouteDistanceKm(route);
     }
