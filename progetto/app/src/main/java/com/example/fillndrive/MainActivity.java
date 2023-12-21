@@ -1,8 +1,10 @@
 package com.example.fillndrive;
 
+import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -10,6 +12,7 @@ import android.view.View;
 import android.widget.CompoundButton;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.navigation.NavController;
@@ -20,7 +23,6 @@ import androidx.navigation.ui.NavigationUI;
 import com.example.fillndrive.databinding.ActivityMainBinding;
 
 import java.io.IOException;
-import java.util.Calendar;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -145,6 +147,17 @@ public class MainActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
+    public void EmailButton(View view){
+        String mailto = "mailto:supportfillndrive@gmail.com";
+        Intent emailIntent = new Intent(Intent.ACTION_SENDTO);
+        emailIntent.setData(Uri.parse(mailto));
+
+        try {
+            startActivity(emailIntent);
+        } catch (ActivityNotFoundException e) {
+            Toast.makeText(MainActivity.this, "Error to open email app", Toast.LENGTH_SHORT).show();
+        }
+    }
 
     @Override
     public boolean onSupportNavigateUp() {
