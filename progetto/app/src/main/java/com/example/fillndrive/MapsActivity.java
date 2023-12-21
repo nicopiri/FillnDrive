@@ -61,7 +61,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private static final int REQUEST_LOCATION_PERMISSION = 1;
     private EditText searchEditText;
     private GeoApiContext context;
-    private LatLng currentLocation;
     private SharedPreferences preferences;
     protected static Polyline currentPolyline;
     protected DirectionsRoute route;
@@ -197,16 +196,16 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             // STEP 2. Ordina la lista per convenienza considerando 500 mt come distanza trascurabile
             List<StazioneDiRifornimento> listaStazioniOrdinata = ordinaPerPrezzoCrescenteOgni500mt(listaStazioniOrdinataPerIndice);
 
-                        // Imposta il percorso di default per la stazione più conveniente
-                        StazioneDiRifornimento stazionePredefinita = listaStazioniOrdinata.stream().findFirst().orElse(null);
-                        Marker marker = createNewMarker(stazionePredefinita, BitmapDescriptorFactory.HUE_GREEN);
+            // Imposta il percorso di default per la stazione più conveniente
+            StazioneDiRifornimento stazionePredefinita = listaStazioniOrdinata.stream().findFirst().orElse(null);
+            Marker marker = createNewMarker(stazionePredefinita, BitmapDescriptorFactory.HUE_GREEN);
 
-                        // Imposta l'icona del marker predefinito
-                        marker.setIcon(BitmapDescriptorFactory.fromBitmap(resizeBitmap(R.drawable.pin, 60, 100)));
+            // Imposta l'icona del marker predefinito
+            marker.setIcon(BitmapDescriptorFactory.fromBitmap(resizeBitmap(R.drawable.pin, 60, 100)));
 
-                        showMarkerInformation(marker);
-                        drawRoute(currentLocation, marker.getPosition());
-                        listaStazioniOrdinata.remove(0);
+            showMarkerInformation(marker);
+            drawRoute(location, marker.getPosition());
+            listaStazioniOrdinata.remove(0);
 
             if (!listaStazioniOrdinata.isEmpty()) {
 
