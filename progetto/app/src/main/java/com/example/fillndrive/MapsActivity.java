@@ -129,6 +129,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 Address address = addressList.get(0);
 
                 LatLng coordinateLuogoCercato = new LatLng(address.getLatitude(), address.getLongitude());
+
+                // Crea un marker nel centro città per segnalare il punto di inizio dei percorsi caricati
+                MarkerOptions markerOptions = new MarkerOptions()
+                        .position(coordinateLuogoCercato)
+                        .icon(BitmapDescriptorFactory.fromBitmap(resizeBitmap(R.drawable.current_position_marker, 26, 43)));
+                googleMap.addMarker(markerOptions);
+
                 findStationsAndDrawMarker(coordinateLuogoCercato);
             }
             else {
@@ -199,10 +206,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             // Imposta il percorso di default per la stazione più conveniente
             StazioneDiRifornimento stazionePredefinita = listaStazioniOrdinata.stream().findFirst().orElse(null);
             Marker marker = createNewMarker(stazionePredefinita, BitmapDescriptorFactory.HUE_GREEN);
-
-            // Imposta l'icona del marker predefinito
             marker.setIcon(BitmapDescriptorFactory.fromBitmap(resizeBitmap(R.drawable.pin, 37, 63)));
-
             showMarkerInformation(marker);
             drawRoute(location, marker.getPosition());
             listaStazioniOrdinata.remove(0);
@@ -213,7 +217,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 chooseColorAndDrawMarker(listaStazioniOrdinata);
             }
         }
-        googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(location, 15));
+        googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(location, 15));
 
         googleMap.setOnMarkerClickListener(marker -> {
             drawRoute(location, marker.getPosition());
