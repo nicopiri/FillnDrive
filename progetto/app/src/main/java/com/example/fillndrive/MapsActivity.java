@@ -93,7 +93,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             }
         });
 
-        // Aggiunto il listener per il pulsante "Home"
         homeButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
