@@ -10,6 +10,7 @@
         android:layout_width="280dp"
         android:layout_height="wrap_content"
         android:textSize="18sp"
+        android:textColor="@color/white"
         android:textStyle="bold" />
 
     <TextView
@@ -17,12 +18,14 @@
         android:layout_width="280dp"
         android:layout_height="wrap_content"
         android:layout_below="@id/titleTextView"
+        android:textColor="@color/white"
         android:layout_marginTop="15dp" />
 
     <TextView
         android:id="@+id/infoTextView"
         android:layout_width="280dp"
         android:layout_height="wrap_content"
+        android:textColor="@color/white"
         android:layout_below="@id/snippetTextView"
         android:layout_marginTop="15dp" />
 
@@ -34,6 +37,7 @@
         android:layout_marginStart="303dp"
         android:layout_marginTop="55dp"
         android:background="@drawable/direction"
+        android:textColor="@color/white"
         android:onClick="onStartRouteClick" />
 
     <Button
