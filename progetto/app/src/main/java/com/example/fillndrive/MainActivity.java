@@ -133,6 +133,10 @@ public class MainActivity extends AppCompatActivity {
         String fuel = preferences.getString("fuel", "Benzina%");
         fuel = fuel.replace("%", "");
 
+        int flag = getPreferences().getInt("self", 1);
+
+        CompoundButton cp = findViewById(R.id.serviceSwitch);
+
         // Array di RadioButton
         RadioButton[] radioButtons = new RadioButton[4];
         radioButtons[0] = findViewById(R.id.radioButton1);
@@ -142,6 +146,8 @@ public class MainActivity extends AppCompatActivity {
 
         // Nomi dei carburanti corrispondenti ai RadioButton
         String[] fuelNames = {"Benzina", "Gasolio", "GPL", "Metano"};
+
+        cp.setChecked(flag != 0);
 
         // Ciclo per cercare il carburante corrispondente e impostare il RadioButton
         for (int i = 0; i < radioButtons.length; i++) {
