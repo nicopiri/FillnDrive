@@ -54,15 +54,12 @@ public class MainActivity extends AppCompatActivity {
 
         //prova a prelevare le preferenze in cache
         preferences = getSharedPreferences("fuelAndService", Context.MODE_PRIVATE);
-/*
 
         //se le preferenze sono impostate allora carica la MapsActivity altrimenti prosegue
         if(preferences.getBoolean("cache", false)){
             Intent intent = new Intent(this, MapsActivity.class);
             startActivity(intent);
         }
-
-*/
 
         //inflate del layout scelta carburante e tipo di servizio
         binding = ActivityMainBinding.inflate(getLayoutInflater());
