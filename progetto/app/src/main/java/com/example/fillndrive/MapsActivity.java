@@ -96,9 +96,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         homeButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                // Aggiungi qui la logica per navigare al primo fragment o all'attività principale
-                Intent intent = new Intent(MapsActivity.this, MainActivity.class);
-                startActivity(intent);
+                Intent i = new Intent(MapsActivity.this, MainActivity.class);
+                i.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+                startActivity(i);
             }
         });
 
