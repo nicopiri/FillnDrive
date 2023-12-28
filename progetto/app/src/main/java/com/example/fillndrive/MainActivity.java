@@ -71,8 +71,10 @@ public class MainActivity extends AppCompatActivity {
         appBarConfiguration = new AppBarConfiguration.Builder(navController.getGraph()).build();
         NavigationUI.setupActionBarWithNavController(this, navController, appBarConfiguration);
 
-
         SharedPreferences.Editor editor = preferences.edit();
+
+        setChecked();
+        
         // Listener per la selezione del carburante
         binding.fuelRadioGroup.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
             @Override
@@ -125,6 +127,29 @@ public class MainActivity extends AppCompatActivity {
                 startActivity(intent);
             }
         });
+    }
+
+    private void setChecked() {
+        String fuel = preferences.getString("fuel", "Benzina%");
+        fuel = fuel.replace("%", "");
+
+        // Array di RadioButton
+        RadioButton[] radioButtons = new RadioButton[4];
+        radioButtons[0] = findViewById(R.id.radioButton1);
+        radioButtons[1] = findViewById(R.id.radioButton2);
+        radioButtons[2] = findViewById(R.id.radioButton3);
+        radioButtons[3] = findViewById(R.id.radioButton4);
+
+        // Nomi dei carburanti corrispondenti ai RadioButton
+        String[] fuelNames = {"Benzina", "Gasolio", "GPL", "Metano"};
+
+        // Ciclo per cercare il carburante corrispondente e impostare il RadioButton
+        for (int i = 0; i < radioButtons.length; i++) {
+            if (fuel.equals(fuelNames[i])) {
+                radioButtons[i].setChecked(true);
+                break;
+            }
+        }
     }
 
     @Override
