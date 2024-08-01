@@ -7,7 +7,7 @@ This project is designed to manage university exams.
 Here are some screenshots of the application:
 
 - **Homepage**
-  ![Homepage](screenshots/homepage.jpg)
+  ![Homepage](screenshots/homepage.PNG)
 
 - **Position**
   ![Position](screenshots/position.PNG)
